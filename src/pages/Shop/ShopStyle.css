@@ -1,0 +1,69 @@
+.shop-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 48px;
+    padding: 48px;
+}
+.shop-sidebar h3 {
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    color: var(--dark);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+}
+.filter-group {
+    margin-bottom: 32px;
+}
+.filter-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text);
+}
+.filter-item input {
+    accent-color: var(--clay);
+    cursor: pointer;
+}
+.color-swatches {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.color-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: var(--transition);
+}
+.color-swatch:hover,
+.color-swatch.active {
+    border-color: var(--dark);
+}
+.shop-main {
+}
+.shop-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+.shop-count {
+    color: var(--text-light);
+    font-size: 13px;
+}
+.shop-sort {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    font-family: var(--font-body);
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text);
+}
