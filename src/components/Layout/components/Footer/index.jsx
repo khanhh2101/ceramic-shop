@@ -12,7 +12,8 @@ function Footer() {
                         Gốm thủ công Việt Nam chất lượng cao, được chế tác tỉ mỉ
                         bởi những nghệ nhân lành nghề tại làng gốm Bát Tràng.
                     </p>
-                    <button onClick={() => navigate('/contact')}>
+                    <button className="footer-contact-btn"
+                    onClick={() => navigate('/contact')}>
                         {' '}
                         CONTACT US →
                     </button>
