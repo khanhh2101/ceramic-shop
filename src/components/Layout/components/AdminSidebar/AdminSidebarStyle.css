@@ -1,0 +1,94 @@
+/* ===== ADMIN ===== */
+#admin-panel {
+    display: flex;
+}
+
+#admin-panel.active {
+    display: flex;
+}
+.admin-sidebar {
+    width: 240px;
+    background: var(--dark);
+    min-height: 100vh;
+    padding: 24px 0;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+.admin-logo {
+    padding: 8px 24px 32px;
+    font-family: var(--font-display);
+    font-size: 20px;
+    color: var(--clay);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 16px;
+}
+.admin-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
+    cursor: pointer;
+    transition: var(--transition);
+    border-left: 3px solid transparent;
+}
+.admin-nav-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--white);
+}
+.admin-nav-item.active {
+    background: rgba(201, 169, 110, 0.12);
+    color: var(--gold);
+    border-left-color: var(--gold);
+}
+.admin-nav-item svg {
+    opacity: 0.7;
+}
+.admin-main {
+    flex: 1;
+    background: #f8f5f0;
+    min-height: 100vh;
+    overflow-y: auto;
+}
+.admin-topbar {
+    background: var(--white);
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+.admin-topbar h2 {
+    font-size: 22px;
+}
+.admin-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--text-light);
+}
+.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--clay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 14px;
+}
+.admin-content {
+    padding: 32px;
+}

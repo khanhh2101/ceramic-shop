@@ -16,8 +16,7 @@ function Header({ onCartClick }) {
     };
 
     const showAdmin = () => {
-        console.log('Mở Admin');
-        // TODO: chuyển đến trang admin
+        navigate('/Admin');
     };
     return (
         <nav className="nav">

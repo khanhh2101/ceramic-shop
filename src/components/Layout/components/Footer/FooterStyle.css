@@ -21,7 +21,7 @@ footer {
     line-height: 1.8;
     margin-bottom: 24px;
 }
-.footer-contact-btn {
+/* .footer-contact-btn {
     background: var(--dark);
     color: var(--white);
     border: var(--white);
@@ -30,7 +30,7 @@ footer {
     cursor: pointer;
     font-family: inherit;
     transition: background 0.2s;
-}
+} */
 .footer-col h4 {
     font-size: 11px;
     letter-spacing: 2px;

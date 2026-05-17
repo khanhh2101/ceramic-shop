@@ -5,6 +5,7 @@ import Shop from '@/pages/Shop';
 import Blog from '@/pages/Blog';
 import Contact from '@/pages/Contact';
 import Checkout from '@/pages/Checkout';
+import Admin from '@/pages/Admin';
 import Upload from '@/pages/Upload';
 import Search from '@/pages/Search';
 
@@ -14,6 +15,7 @@ const publicRoutes = [
     { path: '/About', component: About },
     { path: '/Blog', component: Blog },
     { path: '/Contact', component: Contact },
+    { path: '/Admin', component: Admin, layout: AdminOnly },
     { path: '/Checkout', component: Checkout },
     { path: '/upload', component: Upload, layout: HeaderOnly },
     { path: '/search', component: Search, layout: null },
