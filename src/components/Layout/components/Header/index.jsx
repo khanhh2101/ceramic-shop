@@ -16,7 +16,7 @@ function Header({ onCartClick }) {
     };
 
     const showAdmin = () => {
-        navigate('/Admin');
+        navigate('/Dashboard');
     };
     return (
         <nav className="nav">

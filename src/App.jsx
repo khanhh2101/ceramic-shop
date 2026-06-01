@@ -14,11 +14,12 @@ function App() {
                                 ? Fragment
                                 : route.layout || DefaultLayout;
                         const Page = route.component;
+                        const title = route?.title || '';
                         return (
                             <Route
                                 path={route.path}
                                 element={
-                                    <Layout>
+                                    <Layout title={title}>
                                         <Page />
                                     </Layout>
                                 }

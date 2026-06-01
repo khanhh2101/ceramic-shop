@@ -1,5 +1,5 @@
 .home-page {
-    background: #f5f0e8;
+    background: white;
     min-height: 100vh;
 }
 
@@ -10,7 +10,7 @@
     align-items: center;
     min-height: 480px;
     padding: 64px 80px;
-    background: #fce8e4;
+    background: #ede0cc;
     gap: 48px;
 }
 
@@ -37,45 +37,10 @@
     object-fit: contain;
 }
 
-/* ── BRANDS ── */
-.home-brands {
-    text-align: center;
-    padding: 48px 80px;
-    background: #fff;
-}
-
-.home-brands__title {
-    font-size: 14px;
-    color: #888;
-    margin-bottom: 24px;
-}
-
-.home-brands__list {
-    display: flex;
-    justify-content: center;
-    gap: 48px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.home-brands__item {
-    font-family: Georgia, serif;
-    font-size: 20px;
-    color: #1a1a1a;
-    letter-spacing: 2px;
-    opacity: 0.6;
-    transition: opacity 0.2s;
-    cursor: pointer;
-}
-
-.home-brands__item:hover {
-    opacity: 1;
-}
-
 /* ── CATEGORIES ── */
 .home-categories {
     padding: 64px 80px;
-    background: #f5f0e8;
+    background: white;
 }
 
 .home-categories__header {
@@ -99,15 +64,22 @@
     padding-top: 8px;
 }
 
-.home-categories__grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
+.home-categories__scroll {
+    display: flex;
     gap: 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+}
+
+.home-categories__scroll::-webkit-scrollbar {
+    display: none;
 }
 
 .home-cat-card {
+    min-width: 300px;
     cursor: pointer;
     text-align: center;
+    scroll-snap-align: start;
 }
 
 .home-cat-card__image {
@@ -115,7 +87,7 @@
     border-radius: 4px;
     overflow: hidden;
     margin-bottom: 10px;
-    height: 160px;
+    height: 200px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -143,77 +115,56 @@
     color: #888;
 }
 
-/* ── ABOUT US ── */
-.home-about {
-    text-align: center;
-    padding: 64px 80px;
-    background: #fff;
-}
-
-.home-about__title {
-    font-family: Georgia, serif;
-    font-size: 36px;
-    margin-bottom: 8px;
-    color: #1a1a1a;
-}
-
-.home-about__subtitle {
-    font-size: 13px;
-    color: #888;
-    margin-bottom: 40px;
-}
-
-.home-about__features {
+/* PROMO BANNER */
+.promo-banner {
+    margin: 64px 80px;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 32px;
-    max-width: 900px;
-    margin: 0 auto;
+    grid-template-columns: 1fr 1fr;
+    background: white;
 }
-
-.home-about__feature {
-    text-align: center;
+.promo-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
-
-.home-about__icon {
-    font-size: 32px;
+.promo-tag {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--terracotta);
     margin-bottom: 12px;
 }
-
-.home-about__feature h4 {
-    font-size: 16px;
-    margin-bottom: 8px;
-    color: #1a1a1a;
+.promo-title {
+    font-family: var(--font-display);
+    font-size: 32px;
+    margin-bottom: 16px;
+    color: var(--dark);
+    line-height: 1.2;
 }
-
-.home-about__feature p {
-    font-size: 13px;
-    color: #888;
-    line-height: 1.7;
+.promo-desc {
+    color: var(--text-light);
+    font-size: 14px;
+    margin-bottom: 28px;
 }
-
-/* ── PROMO BANNER ── */
-.home-promo {
-    background: #fce8e4;
-    padding: 64px 80px;
+.promo-right {
+    overflow: hidden;
+    /* min-height: 220px; */
+}
+.promo-right div {
     display: flex;
     align-items: center;
+    justify-content: center;
+    font-size: 72px;
 }
-
-.home-promo__title {
-    font-family: Georgia, serif;
-    font-size: 36px;
-    font-weight: 400;
-    color: #1a1a1a;
-    line-height: 1.3;
-    max-width: 700px;
-    margin-bottom: 28px;
+.promo-right img {
+    width: 382px;
+    height: 392px;
 }
 
 /* ── PRODUCTS ── */
 .home-products {
     padding: 48px 80px;
-    background: #f5f0e8;
+    background: white;
 }
 
 .home-products__grid {
@@ -352,7 +303,7 @@
 /* ── BLOG ── */
 .home-blog {
     padding: 64px 80px;
-    background: #f5f0e8;
+    background: white;
 }
 
 .home-blog__title {
@@ -364,7 +315,7 @@
 
 .home-blog__featured {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 24px;
     margin-bottom: 32px;
     align-items: start;

@@ -1,11 +1,15 @@
-import AdminSideBar from '@/components/Layout/components/AdminSidebar';
+import AdminSidebar from '@/components/Layout/components/AdminSidebar';
+import AdminTopbar from '@/components/Layout/components/AdminTopbar';
 
-function AdminOnly({ children }) {
+function AdminOnly({ children, title }) {
     return (
         <div>
-            <AdminSideBar />
-            <div className="container">
-                <div className="content">{children}</div>
+            <div id="admin-panel">
+                <AdminSidebar />
+                <div className="admin-main">
+                    <AdminTopbar title={title} />
+                    <div className="admin-content">{children}</div>
+                </div>
             </div>
         </div>
     );

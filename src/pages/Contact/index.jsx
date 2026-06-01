@@ -1,12 +1,31 @@
 import './ContactStyle.css';
+import { FaFacebookF, FaInstagram, FaTiktok } from 'react-icons/fa';
 
 function Contact() {
+    const socialLinks = [
+        { href: '#', icon: <FaFacebookF /> },
+        { href: '#', icon: <FaInstagram /> },
+        { href: '#', icon: <FaTiktok /> },
+    ];
     return (
         <div className="contact-page">
             {/* -HERO- */}
             <div className="blog-hero">
-                <h1 className="blog-hero__subtitle">Contact Us</h1>
-                <p className="blog-hero__title">Follow Us</p>
+                <h1 className="contact-hero__subtitle">Contact Us</h1>
+                <div>
+                    <p className="contact-hero__title">Follow Us</p>
+                    <div className="social-channels">
+                        {socialLinks.map((item, i) => (
+                            <a
+                                key={i}
+                                href={item.href}
+                                className="channel-icon"
+                            >
+                                {item.icon}
+                            </a>
+                        ))}
+                    </div>
+                </div>
             </div>
             {/* ── HEADER ── */}
             <div className="contact-header">

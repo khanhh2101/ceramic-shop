@@ -50,28 +50,20 @@ function Shop() {
 
     const colors = [
         {
-            color: '#f5f0ea',
-            title: 'Kem',
-        },
-        {
-            color: '#c4a882',
-            title: 'Vàng đất',
+            color: '#fafafaff',
+            title: 'White',
         },
         {
             color: '#6b4c3b',
-            title: 'Nâu',
+            title: 'Brown',
         },
         {
             color: '#b5624a',
-            title: 'Đỏ gạch',
+            title: 'Brick red',
         },
         {
-            color: '#7ba3b2',
-            title: 'Xanh',
-        },
-        {
-            color: '#8b9d77',
-            title: 'Xanh lá',
+            color: '#000000ff',
+            title: 'Black',
         },
     ];
 
@@ -82,7 +74,7 @@ function Shop() {
                 <div className="shop-sidebar">
                     {/* Danh mục */}
                     <div className="filter-group">
-                        <h3>Danh mục</h3>
+                        <h3>Categories</h3>
                         {categories.map((item) => (
                             <div key={item.id} className="filter-item">
                                 <input
@@ -99,7 +91,7 @@ function Shop() {
 
                     {/* Giá */}
                     <div className="filter-group">
-                        <h3>Giá</h3>
+                        <h3>Price</h3>
                         {priceRanges.map(({ value, label }, index) => (
                             <div key={index} className="filter-item">
                                 <input
@@ -116,7 +108,7 @@ function Shop() {
 
                     {/* Màu sắc */}
                     <div className="filter-group">
-                        <h3>Màu sắc</h3>
+                        <h3>Color</h3>
                         <div className="color-swatches">
                             {colors.map(({ color, title }, index) => (
                                 <div
@@ -135,16 +127,20 @@ function Shop() {
                 {/* Main Content */}
                 <div className="shop-main">
                     <div className="shop-header">
-                        <span className="shop-count">Hiển thị 0 sản phẩm</span>
+                        <span className="shop-count">Showing 0 products</span>
                         <select
                             className="shop-sort"
                             // value={sortOption}
                             // onChange={handleSort}
                         >
-                            <option value="name">Sắp xếp: Tên A-Z</option>
-                            <option value="price-asc">Giá tăng dần</option>
-                            <option value="price-desc">Giá giảm dần</option>
-                            <option value="new">Mới nhất</option>
+                            <option value="name">Sort By: Name A-Z</option>
+                            <option value="price-asc">
+                                Price: Low to Hight
+                            </option>
+                            <option value="price-desc">
+                                Price: Hight to Low
+                            </option>
+                            <option value="new">Newest</option>
                         </select>
                     </div>
 
@@ -158,7 +154,7 @@ function Shop() {
                                 padding: '40px',
                             }}
                         >
-                            Đang tải sản phẩm...
+                            Loading products...
                         </p>
                     </div>
 

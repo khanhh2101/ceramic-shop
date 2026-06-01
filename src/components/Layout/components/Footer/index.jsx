@@ -1,19 +1,43 @@
 import { useNavigate } from 'react-router-dom';
+import { FaFacebookF, FaInstagram, FaTiktok } from 'react-icons/fa';
 import './FooterStyle.css';
 
 function Footer() {
     const navigate = useNavigate();
+    const socialLinks = [
+        { href: '#', icon: <FaFacebookF /> },
+        { href: '#', icon: <FaInstagram /> },
+        { href: '#', icon: <FaTiktok /> },
+    ];
     return (
         <footer className="footer">
             <div className="footer-grid">
                 <div>
-                    <div className="footer-brand">⚬ CERAMIC SHOP</div>
+                    <div className="footer-brand">Gom Nau</div>
                     <p className="footer-desc">
-                        Gốm thủ công Việt Nam chất lượng cao, được chế tác tỉ mỉ
-                        bởi những nghệ nhân lành nghề tại làng gốm Bát Tràng.
+                        High-quality Cham handcrafted pottery, meticulously made
+                        by skilled artisans in the ancient Bau Truc pottery
+                        village.
                     </p>
-                    <button className="footer-contact-btn"
-                    onClick={() => navigate('/contact')}>
+
+                    <div className="follow-us">
+                        <h4>Follow Us</h4>
+                        <div className="social-links">
+                            {socialLinks.map((item, i) => (
+                                <a
+                                    key={i}
+                                    href={item.href}
+                                    className="social-icon"
+                                >
+                                    {item.icon}
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                    <button
+                        className="footer-contact-btn"
+                        onClick={() => navigate('/contact')}
+                    >
                         {' '}
                         CONTACT US →
                     </button>
@@ -23,10 +47,10 @@ function Footer() {
                     <h4>About Us</h4>
                     <ul>
                         <li>
-                            <a onClick={() => navigate('about')}>Story</a>
+                            <a onClick={() => navigate('/About')}>Story</a>
                         </li>
                         <li>
-                            <a onClick={() => navigate('about')}>Our Team</a>
+                            <a onClick={() => navigate('/About')}>Our Team</a>
                         </li>
                         <li>
                             <a href="#">Awards</a>

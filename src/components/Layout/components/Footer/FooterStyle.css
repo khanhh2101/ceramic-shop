@@ -1,5 +1,5 @@
 footer {
-    background: var(--dark);
+    background: #433732;
     color: var(--white);
     padding: 64px 48px 32px;
 }
@@ -13,29 +13,57 @@ footer {
     font-family: var(--font-display);
     font-size: 24px;
     margin-bottom: 16px;
-    color: var(--clay);
+    color: #efcdc3;
 }
 .footer-desc {
-    color: rgba(255, 255, 255, 0.5);
     font-size: 13px;
     line-height: 1.8;
     margin-bottom: 24px;
+    color: #d3c8b7;
 }
-/* .footer-contact-btn {
-    background: var(--dark);
+
+.footer-contact-btn {
+    background: #433732;
     color: var(--white);
     border: var(--white);
-    padding: 14px 28px;
+    padding: 14px 0px;
     font-size: 13px;
     cursor: pointer;
     font-family: inherit;
     transition: background 0.2s;
-} */
+}
+.social-links {
+    display: flex;
+    gap: 10px;
+}
+
+.social-links a {
+    margin: 14px 0px;
+}
+
+.social-icon {
+    size: 5px;
+    width: 28px;
+    height: 28px;
+    size: 13px;
+    border-radius: 50%;
+    border: 1.5px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-decoration: none;
+    transition:
+        border-color 0.2s,
+        color 0.2s;
+}
+
+.social-icon:hover {
+    border-color: #111;
+    color: #111;
+}
 .footer-col h4 {
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--clay);
+    color: white;
     margin-bottom: 20px;
 }
 .footer-col ul {
@@ -45,7 +73,7 @@ footer {
     gap: 10px;
 }
 .footer-col ul li a {
-    color: rgba(255, 255, 255, 0.5);
+    color: #d3c8b7;
     font-size: 13px;
     transition: var(--transition);
     cursor: pointer;
