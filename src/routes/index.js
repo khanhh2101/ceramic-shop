@@ -4,6 +4,7 @@ import About from '@/pages/About';
 import Shop from '@/pages/Shop';
 import Blog from '@/pages/Blog';
 import Contact from '@/pages/Contact';
+import Wishlist from '@/pages/Wishlist';
 import Checkout from '@/pages/Checkout';
 import Upload from '@/pages/Upload';
 import Search from '@/pages/Search';
@@ -21,6 +22,7 @@ const publicRoutes = [
     { path: '/About', component: About },
     { path: '/Blog', component: Blog },
     { path: '/Contact', component: Contact },
+    { path: '/Wishlist', component: Wishlist },
     { path: '/Checkout', component: Checkout },
     { path: '/upload', component: Upload, layout: HeaderOnly },
     { path: '/search', component: Search, layout: null },

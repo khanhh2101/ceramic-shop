@@ -5,36 +5,51 @@
 
 /* ── HERO ── */
 .home-hero {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    position: relative;
+    min-height: 580px;
+    display: flex;
     align-items: center;
-    min-height: 480px;
-    padding: 64px 80px;
-    background: #ede0cc;
-    gap: 48px;
+    overflow: hidden;
+    justify-content: center;
+}
+
+/* ── ẢNH NỀN ── */
+.home-hero-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+}
+
+.home-hero__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 1;
+}
+
+.home-hero-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    justify-items: center;
 }
 
 .home-hero__title {
     line-height: 1.2;
+
     margin-bottom: 16px;
+    color: #fff;
 }
 
 .home-hero__subtitle {
     font-size: 14px;
-    color: #888;
+    color: rgba(255, 255, 255, 0.8);
     margin-bottom: 28px;
     line-height: 1.7;
-}
-
-.home-hero__image {
-    display: flex;
-    justify-content: center;
-}
-
-.home-hero__image img {
-    width: 100%;
-    max-width: 420px;
-    object-fit: contain;
+    text-align: center;
 }
 
 /* ── CATEGORIES ── */
@@ -43,18 +58,9 @@
     background: white;
 }
 
-.home-categories__header {
-    display: grid;
-    grid-template-columns: 200px 1fr;
-    gap: 48px;
-    align-items: start;
-    margin-bottom: 36px;
-}
-
 .home-categories__title {
-    font-family: Georgia, serif;
-    font-size: 36px;
-    color: #1a1a1a;
+    text-align: center;
+    margin-bottom: 14px;
 }
 
 .home-categories__desc {
@@ -167,6 +173,11 @@
     background: white;
 }
 
+.home-best-seller {
+    text-align: center;
+    margin-bottom: 14px;
+}
+
 .home-products__grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -247,10 +258,7 @@
 }
 
 .home-testimonials__title {
-    font-family: Georgia, serif;
-    font-size: 36px;
     margin-bottom: 40px;
-    color: #1a1a1a;
 }
 
 .home-testimonials__grid {
@@ -307,8 +315,7 @@
 }
 
 .home-blog__title {
-    font-family: Georgia, serif;
-    font-size: 32px;
+    text-align: center;
     color: #1a1a1a;
     margin-bottom: 32px;
 }

@@ -93,7 +93,14 @@ function Home() {
         <div className="home-page">
             {/* ── HERO ── */}
             <div className="home-hero">
-                <div className="home-hero__content">
+                <img
+                    className="home-hero-bg"
+                    src="/assets/image/home/home.png"
+                    alt="hero background"
+                />
+                <div className="home-hero__overlay" />
+
+                <div className="home-hero-content">
                     <h1 className="home-hero__title">
                         Feel it. Feel the Uniqueness.
                     </h1>
@@ -101,23 +108,14 @@ function Home() {
                         fulfillment of the highest quality that we are proud to
                         offer our customers.
                     </p>
-                    <button className="btn-dark">Buy Now</button>
-                </div>
-                <div className="home-hero__image">
-                    <img src="/assets/image/home/home1.png" alt="home-image" />
+                    <button className="btn-dark">Shopping</button>
                 </div>
             </div>
 
             {/* ── CATEGORIES ── */}
             <div className="home-categories">
-                <div className="home-categories__header">
-                    <h2 className="home-categories__title">Categories</h2>
-                    <p className="home-categories__desc">
-                        FCU Filament Made of CLU is mostly the first spun that
-                        print and finally checks, second, set up the team
-                        assembles you will have every control quality check.
-                    </p>
-                </div>
+                <h2 className="home-categories__title">Danh mục</h2>
+
                 <div className="home-categories__scroll">
                     {categories.map((cat, index) => (
                         <div key={index} className="home-cat-card">
@@ -137,11 +135,11 @@ function Home() {
                     <h2 className="promo-title">
                         GIẢM ĐẾN 40%
                         <br />
-                        BỘ SƯU TẬP HOLIDAY
+                        BỘ SƯU TẬP CHẬU TRỒNG CÂY
                     </h2>
                     <p className="promo-desc">
-                        Ưu đãi có hạn cho bộ sưu tập gốm holiday đặc biệt, món
-                        quà tuyệt vời cho những dịp lễ.
+                        Ưu đãi có hạn cho bộ sưu tập chậu trồng cây, bền bỉ,
+                        thẩm mĩ, thông thoát và không gây úng cây.
                     </p>
                     <button className="btn btn-dark" onclick="navigate('shop')">
                         MUA NGAY →
@@ -156,7 +154,7 @@ function Home() {
 
             {/* ── PRODUCTS ── */}
             <div className="home-products">
-                <h2>Best Sellers</h2>
+                <h2 className="home-best-seller">Sản phẩm bán chạy</h2>
                 <div className="home-products__grid">
                     {bestSellers.map((prod, index) => (
                         <div key={index} className="home-prod-card">
@@ -168,7 +166,7 @@ function Home() {
                                 {prod.price}
                             </p>
                             <button className="home-prod-card__btn">
-                                ADD TO CARD
+                                THÊM VÀO GIỎ
                             </button>
                         </div>
                     ))}
@@ -178,7 +176,7 @@ function Home() {
             {/* ── TESTIMONIALS ── */}
             <div className="home-testimonials">
                 <h2 className="home-testimonials__title">
-                    What our client say
+                    Đánh giá từ Khách hàng
                 </h2>
                 <div className="home-testimonials__grid">
                     {testimonials.map((t, index) => (
@@ -201,7 +199,7 @@ function Home() {
             {/* ── BLOG ── */}
 
             <div className="home-blog">
-                <h2 className="home-blog__title">Our Blog</h2>
+                <h2 className="home-blog__title">Blog</h2>
                 <div className="home-blog__featured">
                     <div className="home-blog__featured-content">
                         {/* <p className="home-blog__meta">{blog.author}</p>

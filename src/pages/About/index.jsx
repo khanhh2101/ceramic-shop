@@ -1,135 +1,77 @@
 import './AboutStyle.css';
-import aboutImg from '../../../public/assets/image/aboutimage/about.png';
-import exclusiveImg from '../../../public/assets/image/aboutimage/exclusive.png';
 
 function About() {
     const qualities = [
         {
-            number: '01',
-            text: 'Chất lượng',
+            title: 'Bền Vững',
+            image: '/assets/image/about/quality1.png',
             description:
-                'Một trong những lý do lớn nhất để chọn cốc sứ hoặc gốm thủ công là độ bền vượt trội của chúng.',
+                'Sản phẩm được chế tác từ gốm Chăm Bàu Trúc với độ bền cao và tính thẩm mỹ vượt thời gian.',
         },
         {
-            number: '02',
-            text: 'Tính độc đáo',
+            title: 'Độc đáo',
+            image: '/assets/image/about/quality2.png',
             description:
-                'Một trong những lý do lớn nhất để chọn cốc sứ hoặc gốm thủ công là độ bền vượt trội của chúng.',
+                'Mỗi sản phẩm đều mang dấu ấn riêng của nghệ nhân, không có hai sản phẩm hoàn toàn giống nhau.',
         },
         {
-            number: '03',
-            text: 'Tính dễ sử dụng',
+            title: 'Dễ sử dụng',
+            image: '/assets/image/about/quality3.png',
             description:
-                'Một trong những lý do lớn nhất để chọn cốc sứ hoặc gốm thủ công là độ bền vượt trội của chúng.',
-        },
-        {
-            number: '04',
-            text: 'Sáng tạo',
-            description:
-                'Một trong những lý do lớn nhất để chọn cốc sứ hoặc gốm thủ công là độ bền vượt trội của chúng.',
-        },
-        {
-            number: '05',
-            text: 'Bền vững',
-            description:
-                'Một trong những lý do lớn nhất để chọn cốc sứ hoặc gốm thủ công là độ bền vượt trội của chúng.',
-        },
-        {
-            number: '06',
-            text: 'Đổi mới',
-            description:
-                'Một trong những lý do lớn nhất để chọn cốc sứ hoặc gốm thủ công là độ bền vượt trội của chúng.',
+                'Quy trình sản xuất thân thiện với môi trường và gìn giữ giá trị văn hóa truyền thống.',
         },
     ];
 
-    const exclusiveQualities = [
-        {
-            icon: '🏆',
-            title: 'Tay nghề thủ công cao cấp',
-            description:
-                'Gốm của chúng tôi được chế tác với tình yêu và sự tỉ mỉ.',
-        },
-        {
-            icon: '🌿',
-            title: 'Thân thiện với môi trường & Bền vững',
-            description:
-                'Chúng tôi tạo ra những sản phẩm bền lâu với môi trường.',
-        },
-        {
-            icon: '🎁',
-            title: 'Hoàn hảo cho mọi dịp',
-            description:
-                'Phù hợp cho mọi dịp từ quà tặng đến sử dụng hàng ngày.',
-        },
-    ];
     return (
         <div className="page" id="page-about">
             {/* ── HERO ── */}
             <div className="about-hero">
-                <p className="about-hero__subtitle">Welcome to Ceramic Shop</p>
-                <h1 className="about-hero__title">About Us</h1>
+                <img
+                    className="about-hero-bg"
+                    src="/assets/image/about/about-hero.jpg"
+                    alt="about-background"
+                />
+                <div className="about-hero-overlay" />
+
+                <div className="about-hero-content">
+                    <h1 className="about-hero__title">Về Chúng tôi</h1>
+                    <p className="about-hero-description">Gốm Nâu...</p>
+                </div>
             </div>
             <div className="about-header">
-                <div className="about-image">
-                    <img src={aboutImg} alt="ceramic" />
+                <div className="about-header-image">
+                    <img src="./assets/image/about/about.jpg" alt="ceramic" />
                 </div>
-                <div className="about-ceramic">
-                    <p>Về Ceramic Shop</p>
+                <div className="about-header-content">
                     <h2> Nhà cung cấp gốm mỹ nghệ và gốm gia dụng</h2>
-                    <p class="about-description">
-                        Gốm thủ công Việt Nam được chế tác từ năm 1650 — hãy
-                        cùng khám phá hành trình của chúng tôi
+                    <p className="about-description">
+                        Gốm Chăm Bàu Trúc được chế tác từ năm ...
                     </p>
-                    <span>
-                        <li>Hơn 1.200 mẫu gốm mỹ nghệ độc đáo </li>
-                        <li> Hơn 1.200 mẫu gốm gia </li>
-                        dụng
-                    </span>
                 </div>
             </div>
-            <div className="qualities">
-                <h2>Chất lượng & Giá trị</h2>
-                <div className="qualities-content">
+            <div className="quality">
+                <div className="quality-content">
+                    <h2 className="quality-header">Nghệ thuật & Giá trị</h2>
                     {qualities.map((item, index) => (
-                        <div key={index} className="qualities-item">
-                            <div className="qualities-text">
-                                <div className="qualities-number">
-                                    {item.number}
+                        <div
+                            key={index}
+                            className={`quality-row ${
+                                index % 2 !== 0 ? 'reverse' : ''
+                            }`}
+                        >
+                            <div className="quality-text-box">
+                                <div className="quality-text">
+                                    <h3>{item.title}</h3>
+
+                                    <p>{item.description}</p>
                                 </div>
-                                <h3>{item.text}</h3>
-                                <p>{item.description}</p>
+                            </div>
+
+                            <div className="quality-image-box">
+                                <img src={item.image} alt={item.title} />
                             </div>
                         </div>
                     ))}
-                </div>
-            </div>
-            <div className="exclusive">
-                <div className="exclusive-content">
-                    <h4 className="exclusive-subtitle">Cốc sứ cao cấp</h4>
-                    <h2 className="exclusive-title">Những điểm độc đáo</h2>
-                    <p className="exclusive-description">
-                        Chất lượng tuyệt hảo, được chế tác để mang lại sự thư
-                        giãn và sảng khoái.
-                    </p>
-                    <div className="Exclusive-list">
-                        {exclusiveQualities.map((item, index) => (
-                            <div key={index} className="exclusive-item">
-                                <div className="exclusive-row">
-                                    <div className="exclusive-icon">
-                                        {item.icon}
-                                    </div>
-                                    <div className="exclusive-text">
-                                        <h4>{item.title}</h4>
-                                        <p>{item.description}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    <button className="btn-dark">Liên hệ</button>
-                </div>
-                <div className="exclusive-image">
-                    <img src={exclusiveImg} alt="Exclusive Qualities" />
                 </div>
             </div>
         </div>

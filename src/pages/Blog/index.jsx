@@ -47,8 +47,8 @@ function Blog() {
         <div className="blog-page">
             {/* ── HERO ── */}
             <div className="blog-hero">
-                <p className="blog-hero__subtitle">News Blog</p>
-                <h1 className="blog-hero__title">Latest News</h1>
+                <p className="blog-hero__subtitle">Tin tức</p>
+                <h1 className="blog-hero__title">Bài viết mới nhất</h1>
             </div>
 
             {/* ── FEATURED POST ── */}
@@ -67,7 +67,7 @@ function Blog() {
                         {featuredPost.description}
                     </p>
                     <a className="blog-read-more" href="#">
-                        Read more
+                        Đọc thêm
                     </a>
                 </div>
             </div>
@@ -83,7 +83,7 @@ function Blog() {
                             <p className="blog-card__date">{post.date}</p>
                             <h3 className="blog-card__title">{post.title}</h3>
                             <a className="blog-read-more" href="#">
-                                Read more
+                                Đọc thêm
                             </a>
                         </div>
                     </div>

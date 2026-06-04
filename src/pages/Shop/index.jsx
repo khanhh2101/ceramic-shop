@@ -4,47 +4,44 @@ function Shop() {
     const categories = [
         {
             id: 1,
-            value: 'Dinnerware',
-            label: 'Dinnerware',
+            value: 'Bình hoa',
+            label: 'Bình hoa',
         },
         {
             id: 2,
-            value: 'Ceramic',
-            label: 'Ceramic',
+            value: 'Chậu cây',
+            label: 'Chậu cây',
         },
         {
             id: 3,
-            value: 'Furniture',
-            label: 'Furniture',
+            value: 'Gạch ốp tường',
+            label: 'Gạch ốp tường',
         },
         {
             id: 4,
-            value: 'Decor Art',
-            label: 'Decor Art',
+            value: 'Gốm decor nhà',
+            label: 'Gốm decor nhà',
         },
         {
             id: 5,
-            value: 'Gifts sets',
-            label: 'Gifts sets',
+            value: 'Gốm gia dụng',
+            label: 'Gốm gia dụng',
         },
     ];
 
     const priceRanges = [
         {
-            value: '0-50',
-            label: '$0 - $50',
+            value: '0 - 100.000',
+            label: '0 - 100.000 VND',
+        },
+
+        {
+            value: '100.000 - 200.000',
+            label: '100.000 - 200.000 VND',
         },
         {
-            value: '50-100',
-            label: '$50 - $100',
-        },
-        {
-            value: '100-200',
-            label: '$100 - $200',
-        },
-        {
-            value: '200-9999',
-            label: ' Trên $200',
+            value: '200.000 - 9.999.999',
+            label: '200.000 - 9.999.999 VND',
         },
     ];
 
@@ -74,7 +71,7 @@ function Shop() {
                 <div className="shop-sidebar">
                     {/* Danh mục */}
                     <div className="filter-group">
-                        <h3>Categories</h3>
+                        <h3>Danh mục</h3>
                         {categories.map((item) => (
                             <div key={item.id} className="filter-item">
                                 <input

@@ -13,7 +13,7 @@ function Footer() {
         <footer className="footer">
             <div className="footer-grid">
                 <div>
-                    <div className="footer-brand">Gom Nau</div>
+                    <div className="footer-brand">Gốm Nâu</div>
                     <p className="footer-desc">
                         High-quality Cham handcrafted pottery, meticulously made
                         by skilled artisans in the ancient Bau Truc pottery

@@ -11,9 +11,9 @@ function Contact() {
         <div className="contact-page">
             {/* -HERO- */}
             <div className="blog-hero">
-                <h1 className="contact-hero__subtitle">Contact Us</h1>
+                <h1 className="contact-hero__subtitle">Liên hệ</h1>
                 <div>
-                    <p className="contact-hero__title">Follow Us</p>
+                    <p className="contact-hero__title">Theo dõi Gốm Nâu</p>
                     <div className="social-channels">
                         {socialLinks.map((item, i) => (
                             <a
@@ -29,18 +29,18 @@ function Contact() {
             </div>
             {/* ── HEADER ── */}
             <div className="contact-header">
-                <h1 className="contact-header__title">Connect with Us</h1>
+                <h1 className="contact-header__title">Kết nối với Chúng tôi</h1>
                 <p className="contact-header__subtitle">
-                    We are always ready to listen and support you
+                    Chúng tôi luôn sẵn sàng lắng nghe và hỗ trợ bạn
                 </p>
             </div>
 
             {/* ── CONTACT INFO ── */}
             <div className="contact-info">
                 <div className="contact-info__item">
-                    <h4 className="contact-info__label">WORKING HOURS</h4>
+                    <h4 className="contact-info__label">Giờ hoạt động</h4>
                     <p className="contact-info__value">
-                        Monday - Friday: 8:00 AM - 5:00 PM
+                        Thứ 2 - Thứ 6: 8:00 AM - 5:00 PM
                     </p>
                 </div>
                 <div className="contact-info__item">
@@ -48,7 +48,7 @@ function Contact() {
                     <p className="contact-info__value">info@ceramicshop.vn</p>
                 </div>
                 <div className="contact-info__item">
-                    <h4 className="contact-info__label">PHONE NUMBER</h4>
+                    <h4 className="contact-info__label">Số điện thoại</h4>
                     <p className="contact-info__value">(+84) 28 1234 5678</p>
                 </div>
             </div>

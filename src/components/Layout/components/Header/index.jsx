@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { ReactSVG } from 'react-svg';
 import './HeaderStyle.css';
 
 function Header({ onCartClick }) {
@@ -22,29 +23,8 @@ function Header({ onCartClick }) {
         <nav className="nav">
             {/* Logo */}
             <div className="nav-logo" onClick={() => navigate('home')}>
-                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                    <circle
-                        cx="14"
-                        cy="14"
-                        r="13"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                    />
-                    <circle
-                        cx="14"
-                        cy="14"
-                        r="7"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                    />
-                    <path
-                        d="M14 1v26M1 14h26"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        opacity=".4"
-                    />
-                </svg>
-                <span>CERAMIC SHOP</span>
+                <ReactSVG src="/assets/image/home/logo.svg" />
+                <span>GỐM NÂU</span> 
             </div>
 
             {/* Menu Links */}
@@ -104,7 +84,7 @@ function Header({ onCartClick }) {
                 </button>
 
                 {/* Wishlist Button */}
-                <button onClick={() => navigate('wishlist')} title="Yêu thích">
+                <button onClick={() => navigate('/Wishlist')} title="Yêu thích">
                     <svg
                         width="18"
                         height="18"
