@@ -170,9 +170,7 @@ function Details() {
                             {activeTab === 'dimensions' && (
                                 <p>{product.dimensions}</p>
                             )}
-                            {activeTab === 'reviews' && (
-                                <p>{product.dimensions}</p>
-                            )}
+                            {activeTab === 'reviews' && <p>{product.rating}</p>}
                         </div>
                     </div>
                 </div>

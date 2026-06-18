@@ -15,13 +15,13 @@ function Footer() {
                 <div>
                     <div className="footer-brand">Gốm Nâu</div>
                     <p className="footer-desc">
-                        High-quality Cham handcrafted pottery, meticulously made
-                        by skilled artisans in the ancient Bau Truc pottery
-                        village.
+                        Đồ gốm Chăm thủ công chất lượng cao, được chế tác tỉ mỉ
+                        bởi các nghệ nhân lành nghề tại làng gốm Bàu Trúc cổ
+                        làng.
                     </p>
 
                     <div className="follow-us">
-                        <h4>Follow Us</h4>
+                        <h4>Theo dõi chúng tôi</h4>
                         <div className="social-links">
                             {socialLinks.map((item, i) => (
                                 <a
@@ -39,7 +39,7 @@ function Footer() {
                         onClick={() => navigate('/contact')}
                     >
                         {' '}
-                        CONTACT US →
+                        Liên hệ →
                     </button>
                 </div>
 
@@ -47,53 +47,59 @@ function Footer() {
                     <h4>About Us</h4>
                     <ul>
                         <li>
-                            <a onClick={() => navigate('/About')}>Story</a>
+                            <a onClick={() => navigate('/About')}>Câu chuyện</a>
                         </li>
                         <li>
-                            <a onClick={() => navigate('/About')}>Our Team</a>
+                            <a onClick={() => navigate('/About')}>
+                                Đội ngũ nhân sự
+                            </a>
                         </li>
                         <li>
-                            <a href="#">Awards</a>
+                            <a href="#">Giải thưởng</a>
                         </li>
                         <li>
-                            <a href="#">Privacy Policy</a>
+                            <a href="#">Chính sách riêng tư</a>
                         </li>
                     </ul>
                 </div>
 
                 <div className="footer-col">
-                    <h4>Product</h4>
+                    <h4>Sản phẩm</h4>
                     <ul>
                         <li>
                             <a onClick={() => filterShop('Dinnerware')}>
-                                Tableware
+                                Gốm gia dụng
                             </a>
                         </li>
                         <li>
-                            <a onClick={() => filterShop('Ceramic')}>Gốm</a>
+                            <a onClick={() => filterShop('Ceramic')}>
+                                Bình hoa
+                            </a>
                         </li>
                         <li>
-                            <a onClick={() => filterShop('Decor Art')}>Decor</a>
+                            <a onClick={() => filterShop('Decor Art')}>
+                                Gạch ốp tường
+                            </a>
                         </li>
                         <li>
                             <a onClick={() => filterShop('Gifts sets')}>
-                                Gift Sets
+                                Tượng
                             </a>
                         </li>
                     </ul>
                 </div>
 
                 <div className="footer-col">
-                    <h4>Support</h4>
+                    <h4>Hỗ trợ</h4>
                     <ul>
                         <li>
-                            <a onClick={() => navigate('contact')}>Contact</a>
+                            <a onClick={() => navigate('contact')}>Liên hệ</a>
                         </li>
                         <li>
-                            <a href="#">Delivery</a>
+                            <a href="#">Giao hàng</a>
                         </li>
                         <li>
-                            <a href="#">Return</a>
+                            <a href="#">Hoàn hàng</a>
                         </li>
                         <li>
                             <a href="#">FAQ</a>
@@ -103,10 +109,10 @@ function Footer() {
             </div>
 
             <div className="footer-bottom">
-                <span>© 2024 Ceramic Shop. All Rights Reserved.</span>
+                <span>© 2025 Gôm Nâu Shop. All Rights Reserved.</span>
                 <div className="footer-bottom-links">
-                    <a href="#">Terms & Conditions</a>
-                    <a href="#">Privacy Policy</a>
+                    <a href="#">Điều kiện & Điều khoản</a>
+                    <a href="#">Chính sách riêng tư</a>
                 </div>
             </div>
         </footer>
