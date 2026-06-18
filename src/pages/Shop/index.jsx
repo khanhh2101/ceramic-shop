@@ -1,33 +1,43 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './ShopStyle.css';
 
 function Shop() {
-    const categories = [
-        {
-            id: 1,
-            value: 'Bình hoa',
-            label: 'Bình hoa',
-        },
-        {
-            id: 2,
-            value: 'Chậu cây',
-            label: 'Chậu cây',
-        },
-        {
-            id: 3,
-            value: 'Gạch ốp tường',
-            label: 'Gạch ốp tường',
-        },
-        {
-            id: 4,
-            value: 'Gốm decor nhà',
-            label: 'Gốm decor nhà',
-        },
-        {
-            id: 5,
-            value: 'Gốm gia dụng',
-            label: 'Gốm gia dụng',
-        },
-    ];
+    const navigate = useNavigate();
+    const [categories, setCategories] = useState([]);
+    const [products, setProducts] = useState([]);
+
+    useEffect(() => {
+        fetch('http://localhost:23828/api/v1/categories')
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json(); // Chuyển đổi phản hồi sang JSON
+            })
+            .then((result) => {
+                if (result.success) {
+                    const data = result.data;
+                    setCategories(data);
+                }
+            })
+            .catch((ms) => {
+                console.error('Lỗi gọi API:', ms);
+            });
+        fetchProducts();
+    }, []);
+
+    const fetchProducts = async () => {
+        try {
+            const response = await fetch(
+                'http://localhost:23828/api/v1/products?sort=newest&page=0&size=20',
+            );
+            const result = await response.json();
+            setProducts(result.data.content);
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     const priceRanges = [
         {
@@ -75,13 +85,13 @@ function Shop() {
                         {categories.map((item) => (
                             <div key={item.id} className="filter-item">
                                 <input
-                                    value={item.value}
+                                    value={item.id}
                                     type="checkbox"
                                     // checked={selectedCategories.includes(cat)}
                                     // onChange={() => toggleCategory(cat)}
                                     className="cat-filter"
                                 />
-                                {item.label}
+                                {item.name}
                             </div>
                         ))}
                     </div>
@@ -124,7 +134,9 @@ function Shop() {
                 {/* Main Content */}
                 <div className="shop-main">
                     <div className="shop-header">
-                        <span className="shop-count">Showing 0 products</span>
+                        <span className="shop-count">
+                            Hiển thị {products.length} sản phẩm
+                        </span>
                         <select
                             className="shop-sort"
                             // value={sortOption}
@@ -142,17 +154,28 @@ function Shop() {
                     </div>
 
                     {/* Grid sản phẩm */}
-                    <div className="product-grid" id="shopGrid">
+                    <div className="product-list" id="productList">
                         {/* Sau này sẽ render danh sách sản phẩm ở đây */}
-                        <p
-                            style={{
-                                gridColumn: '1 / -1',
-                                textAlign: 'center',
-                                padding: '40px',
-                            }}
-                        >
-                            Loading products...
-                        </p>
+                        {products.map((product) => (
+                            <div
+                                key={product.id}
+                                className="product-card"
+                                onClick={() =>
+                                    navigate(`/Details/${product.id}`)
+                                }
+                            >
+                                <img
+                                    src={product.primaryImageUrl}
+                                    alt={product.name}
+                                    width="200"
+                                />
+                                <h3>{product.name}</h3>
+                                <p>
+                                    {product.price.toLocaleString('vi-VN')} VNĐ
+                                </p>
+                                <p>{product.categoryName}</p>
+                            </div>
+                        ))}
                     </div>
 
                     {/* Phân trang */}

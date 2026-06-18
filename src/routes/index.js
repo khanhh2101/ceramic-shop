@@ -2,6 +2,7 @@ import { HeaderOnly, AdminOnly } from '@/components/Layout';
 import Home from '@/pages/Home';
 import About from '@/pages/About';
 import Shop from '@/pages/Shop';
+import Details from '@/pages/Details';
 import Blog from '@/pages/Blog';
 import Contact from '@/pages/Contact';
 import Wishlist from '@/pages/Wishlist';
@@ -19,6 +20,7 @@ import Settings from '@/pages/Settings';
 const publicRoutes = [
     { path: '/', component: Home },
     { path: '/shop', component: Shop },
+    { path: '/Details/:id', component: Details },
     { path: '/About', component: About },
     { path: '/Blog', component: Blog },
     { path: '/Contact', component: Contact },
