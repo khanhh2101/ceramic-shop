@@ -1,0 +1,682 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { FiSave, FiPlus, FiTrash2, FiEdit3, FiRefreshCw, FiUpload, FiImage } from 'react-icons/fi';
+import toast from 'react-hot-toast';
+import api from '../../../services/api';
+import { mediaService } from '../../../services/index';
+
+export default function AdminSettings() {
+  const [activeTab, setActiveTab] = useState('store'); // store, home, timeline, email
+  const [loading, setLoading] = useState(false);
+
+  // --- States for Tabs ---
+  const [siteSettings, setSiteSettings] = useState([]);
+  const [homeBlocks, setHomeBlocks] = useState([]);
+  const [timeline, setTimeline] = useState([]);
+  const [emails, setEmails] = useState([]);
+
+  const [showTimelineForm, setShowTimelineForm] = useState(false);
+  const [newTimeline, setNewTimeline] = useState({ year: '', title: '', description: '', imageUrl: '' });
+  const [uploadingField, setUploadingField] = useState(null); // Để track field đang upload
+  const [previewImage, setPreviewImage] = useState(null); // Lightbox preview
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    fetchData(activeTab);
+  }, [activeTab]);
+
+  const fetchData = async (tab) => {
+    setLoading(true);
+    try {
+      if (tab === 'store') {
+        const res = await api.get('/settings/admin');
+        setSiteSettings(res.data.data || []);
+      } else if (tab === 'home') {
+        const res = await api.get('/settings/home/admin');
+        setHomeBlocks(res.data.data || []);
+      } else if (tab === 'timeline') {
+        const res = await api.get('/settings/about/timeline');
+        setTimeline(res.data.data || []);
+      } else if (tab === 'email') {
+        const res = await api.get('/settings/email-templates');
+        setEmails(res.data.data || []);
+      }
+    } catch (err) {
+      toast.error('Lỗi khi tải dữ liệu');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Handlers: Site Settings ──
+  const handleSiteSettingChange = (key, value) => {
+    setSiteSettings(prev => prev.map(s => s.key === key ? { ...s, value } : s));
+  };
+
+  const saveSiteSettings = async () => {
+    try {
+      const payload = siteSettings.map(s => ({ key: s.key, value: s.value }));
+      await api.put('/settings/admin', payload);
+      toast.success('Lưu cài đặt thành công!');
+    } catch (err) {
+      toast.error('Lỗi khi lưu cài đặt');
+    }
+  };
+
+  // ── Handlers: Home Content ──
+  const handleHomeBlockChange = (blockKey, field, value) => {
+    setHomeBlocks(prev => prev.map(b => {
+      if (b.blockKey === blockKey) {
+        if (field === 'isVisible') return { ...b, isVisible: value };
+        const data = JSON.parse(b.dataJson || '{}');
+        data[field] = value;
+        return { ...b, dataJson: JSON.stringify(data, null, 2) };
+      }
+      return b;
+    }));
+  };
+
+  const handleHeroSlideChange = (index, field, value) => {
+    setHomeBlocks(prev => prev.map(b => {
+      if (b.blockKey === 'hero') {
+        const data = JSON.parse(b.dataJson || '{"slides":[]}');
+        if (!data.slides) data.slides = [];
+        data.slides[index] = { ...data.slides[index], [field]: value };
+        return { ...b, dataJson: JSON.stringify(data, null, 2) };
+      }
+      return b;
+    }));
+  };
+
+  const addHeroSlide = (e) => {
+    if (e) e.preventDefault();
+    setHomeBlocks(prev => prev.map(b => {
+      if (b.blockKey === 'hero') {
+        const data = JSON.parse(b.dataJson || '{"slides":[]}');
+        if (!data.slides) data.slides = [];
+        data.slides.push({ image: '', title: 'Tiêu đề mới', subtitle: 'Phụ đề', buttonText: 'Khám phá', buttonLink: '/shop' });
+        return { ...b, dataJson: JSON.stringify(data, null, 2) };
+      }
+      return b;
+    }));
+  };
+
+  const removeHeroSlide = (e, index) => {
+    if (e) e.preventDefault();
+    if (!window.confirm('Bạn có chắc muốn xoá slide này?')) return;
+    setHomeBlocks(prev => prev.map(b => {
+      if (b.blockKey === 'hero') {
+        const data = JSON.parse(b.dataJson || '{"slides":[]}');
+        if (!data.slides) return b;
+        data.slides.splice(index, 1);
+        return { ...b, dataJson: JSON.stringify(data, null, 2) };
+      }
+      return b;
+    }));
+  };
+
+  const saveHomeBlock = async (block) => {
+    try {
+      await api.put(`/settings/home/${block.blockKey}`, {
+        dataJson: block.dataJson,
+        isVisible: block.isVisible
+      });
+      toast.success(`Lưu block ${block.displayName} thành công!`);
+    } catch (err) {
+      toast.error(`Lỗi khi lưu block ${block.displayName}`);
+    }
+  };
+
+  // ── Handlers: Email Templates ──
+  const handleEmailChange = (slug, field, value) => {
+    setEmails(prev => prev.map(e => e.slug === slug ? { ...e, [field]: value } : e));
+  };
+
+  const saveEmailTemplate = async (template) => {
+    try {
+      await api.put(`/settings/email-templates/${template.slug}`, {
+        subject: template.subject,
+        body: template.body
+      });
+      toast.success(`Lưu mẫu ${template.displayName} thành công!`);
+    } catch (err) {
+      toast.error(`Lỗi khi lưu mẫu ${template.displayName}`);
+    }
+  };
+
+  // ── Handlers: Timeline ──
+  const deleteTimeline = async (id) => {
+    if(!window.confirm('Xoá mốc thời gian này?')) return;
+    try {
+      await api.delete(`/settings/about/timeline/${id}`);
+      toast.success('Xoá thành công');
+      fetchData('timeline');
+    } catch (err) {
+      toast.error('Lỗi khi xoá');
+    }
+  };
+  const saveTimelineEntry = async () => {
+    if (!newTimeline.year || !newTimeline.title) {
+      toast.error('Vui lòng nhập Năm và Tiêu đề');
+      return;
+    }
+    try {
+      await api.post('/settings/about/timeline', newTimeline);
+      toast.success('Thêm mốc thời gian thành công!');
+      setShowTimelineForm(false);
+      setNewTimeline({ year: '', title: '', description: '', imageUrl: '' });
+      fetchData('timeline');
+    } catch (err) {
+      toast.error('Lỗi khi thêm mốc thời gian');
+    }
+  };
+
+  const handleFileUpload = async (e, callback) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Chỉ hỗ trợ upload file hình ảnh');
+      return;
+    }
+
+    try {
+      const res = await mediaService.upload(file, 'banners', 'AdminSettings');
+      toast.success('Upload ảnh thành công!');
+      if (res.data?.data?.url) {
+         callback(res.data.data.url);
+      }
+    } catch (err) {
+      toast.error('Lỗi khi upload ảnh');
+    } finally {
+      setUploadingField(null);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const isImageField = (key) => {
+    const lowerKey = key.toLowerCase();
+    return lowerKey.includes('image') || lowerKey.includes('icon') || lowerKey.includes('logo') || lowerKey.includes('avatar');
+  };
+
+  // ── Render Tabs ──
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 font-display">Cài đặt hệ thống</h1>
+        <p className="text-sm text-gray-500 mt-1">Quản lý cấu hình website, trang chủ và email.</p>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          {[
+            { id: 'store', label: 'Cấu hình chung' },
+            { id: 'home', label: 'Trang chủ' },
+            { id: 'timeline', label: 'Dấu ấn lịch sử' },
+            { id: 'email', label: 'Email Templates' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === tab.id
+                  ? 'border-[#b5624a] text-[#b5624a]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Content Area */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-[60vh]">
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#b5624a]"></div>
+          </div>
+        ) : (
+          <>
+            {/* ── TAB: CẤU HÌNH CHUNG ── */}
+            {activeTab === 'store' && (
+              <div className="space-y-8 max-w-4xl">
+                {/* Group By 'Group' property */}
+                {[...new Set(siteSettings.map(s => s.group))].map(group => {
+                  const groupSettings = siteSettings.filter(s => s.group === group);
+                  if (groupSettings.length === 0) return null;
+                  
+                  return (
+                    <div key={group} className="border border-gray-200 rounded-lg p-5">
+                      <h3 className="text-lg font-medium text-gray-900 capitalize mb-4 border-b pb-2">
+                        {group} Settings
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {groupSettings.map(setting => {
+                          const isJsonOrTextarea = setting.dataType === 'json' || setting.key.includes('description') || setting.key.includes('about') || setting.key.includes('map');
+                          const isImage = setting.dataType === 'image' || isImageField(setting.key);
+
+                          return (
+                            <div key={setting.key} className={isJsonOrTextarea ? 'md:col-span-2' : ''}>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                {setting.description || setting.displayName} <span className="text-gray-400 font-normal">({setting.key})</span>
+                              </label>
+                              
+                              {isImage ? (
+                                <div className="flex gap-2 items-start">
+                                  <div className="flex-1 space-y-2">
+                                    <input
+                                      type="text"
+                                      value={setting.value || ''}
+                                      onChange={(e) => handleSiteSettingChange(setting.key, e.target.value)}
+                                      placeholder="URL ảnh"
+                                      className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
+                                    />
+                                    <label className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-colors ${uploadingField === setting.key ? 'bg-gray-200 text-gray-500' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                                      <FiUpload /> {uploadingField === setting.key ? 'Đang tải lên...' : 'Tải ảnh lên'}
+                                      <input 
+                                        type="file" 
+                                        className="hidden" 
+                                        accept="image/*" 
+                                        onChange={(e) => {
+                                          setUploadingField(setting.key);
+                                          handleFileUpload(e, (url) => handleSiteSettingChange(setting.key, url));
+                                        }}
+                                      />
+                                    </label>
+                                  </div>
+                                  {setting.value && (
+                                    <img 
+                                      src={setting.value} 
+                                      alt="Preview" 
+                                      className="w-16 h-16 object-cover rounded border bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity" 
+                                      onClick={() => setPreviewImage(setting.value)}
+                                    />
+                                  )}
+                                </div>
+                              ) : isJsonOrTextarea ? (
+                                <textarea
+                                  value={setting.value || ''}
+                                  onChange={(e) => handleSiteSettingChange(setting.key, e.target.value)}
+                                  rows={4}
+                                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
+                                />
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={setting.value || ''}
+                                  onChange={(e) => handleSiteSettingChange(setting.key, e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="flex justify-end pt-4 border-t">
+                  <button
+                    onClick={saveSiteSettings}
+                    className="flex items-center gap-2 bg-[#b5624a] text-white px-6 py-2 rounded-lg hover:bg-[#8e4a36] transition-colors"
+                  >
+                    <FiSave /> Lưu cấu hình
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── TAB: TRANG CHỦ ── */}
+            {activeTab === 'home' && (
+              <div className="space-y-6">
+                {homeBlocks.map(block => {
+                  const data = JSON.parse(block.dataJson || '{}');
+                  return (
+                    <div key={block.blockKey} className="border border-gray-200 rounded-lg p-5">
+                      <div className="flex justify-between items-center mb-4 border-b pb-2">
+                        <h3 className="text-lg font-medium text-gray-900">{block.displayName}</h3>
+                        <div className="flex items-center gap-4">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <span className="text-sm text-gray-600">Hiển thị:</span>
+                            <div className={`w-10 h-5 flex items-center bg-gray-300 rounded-full p-1 transition-colors duration-300 ease-in-out ${block.isVisible ? 'bg-green-500' : ''}`}>
+                              <div
+                                className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ease-in-out ${block.isVisible ? 'translate-x-4' : ''}`}
+                                onClick={() => handleHomeBlockChange(block.blockKey, 'isVisible', !block.isVisible)}
+                              ></div>
+                            </div>
+                          </label>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); saveHomeBlock(block); }}
+                            className="text-sm bg-gray-900 text-white px-3 py-1.5 rounded hover:bg-gray-800 flex items-center gap-2"
+                          >
+                            <FiSave size={14}/> Lưu Block
+                          </button>
+                        </div>
+                      </div>
+
+                      {block.blockKey === 'hero' ? (
+                        <div className="space-y-6">
+                          <div className="flex justify-between items-center bg-gray-50 px-4 py-2 rounded-lg border">
+                            <span className="text-sm font-medium text-gray-700">Danh sách Slide ({data.slides?.length || 0})</span>
+                            <button type="button" onClick={addHeroSlide} className="flex items-center gap-1 text-sm bg-primary-50 text-primary-600 px-3 py-1.5 rounded-md hover:bg-primary-100">
+                              <FiPlus size={14} /> Thêm Slide
+                            </button>
+                          </div>
+                          {data.slides && data.slides.map((slide, index) => (
+                            <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50 relative">
+                              <div className="absolute top-4 right-4 flex gap-2">
+                                <button type="button" onClick={(e) => removeHeroSlide(e, index)} className="text-red-500 hover:text-red-700 p-1 bg-white rounded shadow-sm" title="Xoá slide">
+                                  <FiTrash2 size={16} />
+                                </button>
+                              </div>
+                              <h4 className="font-medium text-sm mb-4 border-b pb-2">Slide {index + 1}</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="md:col-span-2 flex gap-4 items-start">
+                                  <div className="flex-1 space-y-2">
+                                    <label className="block text-xs font-medium text-gray-700">Hình ảnh</label>
+                                    <input
+                                      type="text"
+                                      value={slide.image || ''}
+                                      onChange={(e) => handleHeroSlideChange(index, 'image', e.target.value)}
+                                      placeholder="URL ảnh"
+                                      className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
+                                    />
+                                    <label className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-colors ${uploadingField === `hero-slide-${index}` ? 'bg-gray-200 text-gray-500' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                                      <FiUpload /> {uploadingField === `hero-slide-${index}` ? 'Đang tải lên...' : 'Tải ảnh lên'}
+                                      <input 
+                                        type="file" className="hidden" accept="image/*" 
+                                        onChange={(e) => {
+                                          setUploadingField(`hero-slide-${index}`);
+                                          handleFileUpload(e, (url) => handleHeroSlideChange(index, 'image', url));
+                                        }}
+                                      />
+                                    </label>
+                                  </div>
+                                  {slide.image && (
+                                    <div className="shrink-0 mt-6">
+                                      <img 
+                                        src={slide.image} 
+                                        alt="Preview" 
+                                        className="w-24 h-16 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity" 
+                                        onClick={() => setPreviewImage(slide.image)}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">Tiêu đề</label>
+                                  <input
+                                    type="text" value={slide.title || ''}
+                                    onChange={(e) => handleHeroSlideChange(index, 'title', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">Mô tả (Subtitle)</label>
+                                  <input
+                                    type="text" value={slide.subtitle || ''}
+                                    onChange={(e) => handleHeroSlideChange(index, 'subtitle', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">Chữ nút bấm</label>
+                                  <input
+                                    type="text" value={slide.buttonText || ''}
+                                    onChange={(e) => handleHeroSlideChange(index, 'buttonText', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">Link nút bấm</label>
+                                  <input
+                                    type="text" value={slide.buttonLink || ''}
+                                    onChange={(e) => handleHeroSlideChange(index, 'buttonLink', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {Object.keys(data).map(key => (
+                            <div key={key} className={key === 'content' || key === 'description' ? 'md:col-span-2' : ''}>
+                              <label className="block text-xs font-medium text-gray-700 mb-1 capitalize">{key}</label>
+                              {key === 'content' || key === 'description' ? (
+                                <textarea
+                                  value={data[key]}
+                                  onChange={(e) => handleHomeBlockChange(block.blockKey, key, e.target.value)}
+                                  rows={3}
+                                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
+                                />
+                              ) : isImageField(key) ? (
+                                <div className="flex gap-2 items-start">
+                                  <div className="flex-1 space-y-2">
+                                    <input
+                                      type="text"
+                                      value={data[key]}
+                                      onChange={(e) => handleHomeBlockChange(block.blockKey, key, e.target.value)}
+                                      placeholder="Hoặc dán URL ảnh vào đây"
+                                      className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
+                                    />
+                                    <label className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-colors ${uploadingField === `${block.blockKey}-${key}` ? 'bg-gray-200 text-gray-500' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                                      <FiUpload /> {uploadingField === `${block.blockKey}-${key}` ? 'Đang tải lên...' : 'Tải ảnh lên'}
+                                      <input 
+                                        type="file" 
+                                        className="hidden" 
+                                        accept="image/*" 
+                                        onChange={(e) => {
+                                          setUploadingField(`${block.blockKey}-${key}`);
+                                          handleFileUpload(e, (url) => handleHomeBlockChange(block.blockKey, key, url));
+                                        }}
+                                      />
+                                    </label>
+                                  </div>
+                                  {data[key] && (
+                                    <img 
+                                      src={data[key]} 
+                                      alt="Preview" 
+                                      className="w-16 h-16 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity" 
+                                      onClick={() => setPreviewImage(data[key])}
+                                    />
+                                  )}
+                                </div>
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={data[key]}
+                                  onChange={(e) => handleHomeBlockChange(block.blockKey, key, e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* ── TAB: DẤU ẤN LỊCH SỬ (TIMELINE) ── */}
+            {activeTab === 'timeline' && (
+              <div className="space-y-6 max-w-4xl">
+                <div className="flex justify-between items-center border-b pb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Mốc thời gian</h3>
+                  <button 
+                    onClick={() => setShowTimelineForm(!showTimelineForm)}
+                    className="flex items-center gap-2 text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800"
+                  >
+                    <FiPlus /> Thêm mốc mới
+                  </button>
+                </div>
+                
+                {showTimelineForm && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
+                    <h4 className="text-md font-medium mb-4">Thêm mốc lịch sử</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Năm</label>
+                        <input
+                          type="number"
+                          value={newTimeline.year}
+                          onChange={(e) => setNewTimeline({...newTimeline, year: parseInt(e.target.value) || ''})}
+                          placeholder="VD: 2024"
+                          className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-[#b5624a]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Tiêu đề</label>
+                        <input
+                          type="text"
+                          value={newTimeline.title}
+                          onChange={(e) => setNewTimeline({...newTimeline, title: e.target.value})}
+                          placeholder="VD: Khai trương cửa hàng đầu tiên"
+                          className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-[#b5624a]"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Mô tả</label>
+                        <textarea
+                          value={newTimeline.description}
+                          onChange={(e) => setNewTimeline({...newTimeline, description: e.target.value})}
+                          rows={2}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-[#b5624a]"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Hình ảnh minh hoạ</label>
+                        <div className="flex gap-4 items-center">
+                          {newTimeline.imageUrl ? (
+                            <img 
+                              src={newTimeline.imageUrl} 
+                              alt="preview" 
+                              className="w-20 h-20 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity" 
+                              onClick={() => setPreviewImage(newTimeline.imageUrl)}
+                            />
+                          ) : (
+                            <div className="w-20 h-20 bg-gray-200 rounded border flex items-center justify-center text-gray-400">
+                              <FiImage size={24} />
+                            </div>
+                          )}
+                          <div className="flex-1 space-y-2">
+                            <input
+                              type="text"
+                              value={newTimeline.imageUrl}
+                              onChange={(e) => setNewTimeline({...newTimeline, imageUrl: e.target.value})}
+                              placeholder="Dán URL ảnh hoặc tải lên"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-[#b5624a]"
+                            />
+                            <label className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-colors ${uploadingField === 'timeline-new' ? 'bg-gray-200 text-gray-500' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                              <FiUpload /> {uploadingField === 'timeline-new' ? 'Đang tải lên...' : 'Tải ảnh lên'}
+                              <input 
+                                type="file" 
+                                className="hidden" 
+                                accept="image/*" 
+                                onChange={(e) => {
+                                  setUploadingField('timeline-new');
+                                  handleFileUpload(e, (url) => setNewTimeline({...newTimeline, imageUrl: url}));
+                                }}
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => setShowTimelineForm(false)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Huỷ</button>
+                      <button onClick={saveTimelineEntry} className="px-4 py-2 text-sm font-medium text-white bg-[#b5624a] hover:bg-[#8e4a36] rounded-lg flex items-center gap-2">
+                        <FiSave /> Lưu mốc lịch sử
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {timeline.map(entry => (
+                  <div key={entry.id} className="border border-gray-200 rounded-lg p-5 flex flex-col md:flex-row gap-6">
+                    <div className="w-full md:w-32 flex-shrink-0">
+                      <div className="text-2xl font-display font-bold text-[#b5624a]">{entry.year}</div>
+                      <img src={entry.imageUrl || 'https://via.placeholder.com/150'} alt={entry.title} className="mt-2 w-full h-24 object-cover rounded" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-lg font-medium text-gray-900 mb-2">{entry.title}</h4>
+                      <p className="text-sm text-gray-600 mb-4">{entry.description}</p>
+                      <button onClick={() => deleteTimeline(entry.id)} className="text-red-500 hover:text-red-700 flex items-center gap-1 text-sm">
+                        <FiTrash2 size={14} /> Xóa
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {timeline.length === 0 && <p className="text-gray-500 text-center py-4">Chưa có mốc thời gian nào.</p>}
+              </div>
+            )}
+
+            {/* ── TAB: EMAIL TEMPLATES ── */}
+            {activeTab === 'email' && (
+              <div className="space-y-6 max-w-4xl">
+                <p className="text-sm text-gray-500 mb-6">Chỉnh sửa nội dung các mẫu email tự động được gửi từ hệ thống.</p>
+                {emails.map(email => (
+                  <div key={email.slug} className="border border-gray-200 rounded-lg p-5">
+                    <div className="flex justify-between items-center mb-4 border-b pb-2">
+                      <h3 className="text-lg font-medium text-gray-900">{email.displayName}</h3>
+                      <button
+                        onClick={() => saveEmailTemplate(email)}
+                        className="text-sm bg-gray-900 text-white px-3 py-1.5 rounded hover:bg-gray-800 flex items-center gap-2"
+                      >
+                        <FiSave size={14}/> Lưu Template
+                      </button>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Tiêu đề Email (Subject)</label>
+                        <input
+                          type="text"
+                          value={email.subject}
+                          onChange={(e) => handleEmailChange(email.slug, 'subject', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1 flex justify-between">
+                          <span>Nội dung HTML (Body)</span>
+                          <span className="text-gray-400 font-normal">Biến có sẵn: {email.availablePlaceholders}</span>
+                        </label>
+                        <textarea
+                          value={email.body}
+                          onChange={(e) => handleEmailChange(email.slug, 'body', e.target.value)}
+                          rows={8}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* ── Lightbox Preview Modal ── */}
+      {previewImage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setPreviewImage(null)}>
+          <div className="relative max-w-5xl w-full flex flex-col items-center gap-4" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="absolute -top-10 right-0 text-white hover:text-gray-300"
+              onClick={() => setPreviewImage(null)}
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <img src={previewImage} alt="Preview Zoom" className="max-h-[80vh] object-contain rounded shadow-2xl" />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,12 +1,15 @@
 import './ContactStyle.css';
 import { FaFacebookF, FaInstagram, FaTiktok } from 'react-icons/fa';
+import { useSiteSettings } from '../../hooks/useSiteSettings';
 
 function Contact() {
+    const { settings } = useSiteSettings();
     const socialLinks = [
-        { href: '#', icon: <FaFacebookF /> },
-        { href: '#', icon: <FaInstagram /> },
-        { href: '#', icon: <FaTiktok /> },
-    ];
+        { href: settings.social_facebook || '#', icon: <FaFacebookF /> },
+        { href: settings.social_instagram || '#', icon: <FaInstagram /> },
+        { href: settings.social_youtube || '#', icon: <FaTiktok /> },
+    ].filter(s => s.href && s.href !== '#');
+
     return (
         <div className="contact-page">
             {/* -HERO- */}
@@ -31,27 +34,33 @@ function Contact() {
             <div className="contact-header">
                 <h1 className="contact-header__title">Kết nối với Chúng tôi</h1>
                 <p className="contact-header__subtitle">
-                    Chúng tôi luôn sẵn sàng lắng nghe và hỗ trợ bạn
+                    {settings.contact_description || 'Chúng tôi luôn sẵn sàng lắng nghe và hỗ trợ bạn'}
                 </p>
             </div>
 
             {/* ── CONTACT INFO ── */}
             <div className="contact-info">
                 <div className="contact-info__item">
-                    <h4 className="contact-info__label">Giờ hoạt động</h4>
+                    <h4 className="contact-info__label">Hotline CSKH</h4>
                     <p className="contact-info__value">
-                        Thứ 2 - Thứ 6: 8:00 AM - 5:00 PM
+                        {settings.contact_hotline || settings.store_phone || '0901 234 567'}
                     </p>
                 </div>
                 <div className="contact-info__item">
                     <h4 className="contact-info__label">EMAIL</h4>
-                    <p className="contact-info__value">info@ceramicshop.vn</p>
+                    <p className="contact-info__value">{settings.contact_support_email || settings.store_email || 'info@ceramicshop.vn'}</p>
                 </div>
                 <div className="contact-info__item">
-                    <h4 className="contact-info__label">Số điện thoại</h4>
-                    <p className="contact-info__value">(+84) 28 1234 5678</p>
+                    <h4 className="contact-info__label">Địa chỉ</h4>
+                    <p className="contact-info__value">{settings.contact_address || settings.store_address || '123 Đường Gốm Sứ, Quận 1, TP.HCM'}</p>
                 </div>
             </div>
+
+            {/* ── MAP IFRAME ── */}
+            {settings.contact_map_iframe && (
+                <div className="w-full max-w-5xl mx-auto mb-16 overflow-hidden rounded-xl shadow-sm border border-[#eee]" dangerouslySetInnerHTML={{ __html: settings.contact_map_iframe }}>
+                </div>
+            )}
 
             {/* ── FORM ── */}
             <div className="contact-form">

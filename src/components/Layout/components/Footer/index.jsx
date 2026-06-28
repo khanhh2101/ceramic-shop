@@ -1,121 +1,151 @@
 import { useNavigate } from 'react-router-dom';
-import { FaFacebookF, FaInstagram, FaTiktok } from 'react-icons/fa';
-import './FooterStyle.css';
+import { FaFacebookF, FaInstagram, FaTiktok, FaPinterestP } from 'react-icons/fa';
+import { SiZalo } from 'react-icons/si';
+import { FiMapPin, FiPhone, FiMail } from 'react-icons/fi';
 
-function Footer() {
+export default function Footer() {
     const navigate = useNavigate();
+    
     const socialLinks = [
-        { href: '#', icon: <FaFacebookF /> },
-        { href: '#', icon: <FaInstagram /> },
-        { href: '#', icon: <FaTiktok /> },
+        { href: 'https://facebook.com', icon: <FaFacebookF />, label: 'Facebook' },
+        { href: 'https://instagram.com', icon: <FaInstagram />, label: 'Instagram' },
+        { href: 'https://pinterest.com', icon: <FaPinterestP />, label: 'Pinterest' },
+        { href: 'https://tiktok.com', icon: <FaTiktok />, label: 'TikTok' },
+        { href: 'https://zalo.me', icon: <SiZalo />, label: 'Zalo' },
     ];
-    return (
-        <footer className="footer">
-            <div className="footer-grid">
-                <div>
-                    <div className="footer-brand">Gốm Nâu</div>
-                    <p className="footer-desc">
-                        Đồ gốm Chăm thủ công chất lượng cao, được chế tác tỉ mỉ
-                        bởi các nghệ nhân lành nghề tại làng gốm Bàu Trúc cổ
-                        làng.
-                    </p>
 
-                    <div className="follow-us">
-                        <h4>Theo dõi chúng tôi</h4>
-                        <div className="social-links">
-                            {socialLinks.map((item, i) => (
-                                <a
-                                    key={i}
-                                    href={item.href}
-                                    className="social-icon"
-                                >
-                                    {item.icon}
-                                </a>
-                            ))}
+    const filterShop = (category) => {
+        navigate('/shop');
+    };
+
+    return (
+        <footer className="bg-[#433732] text-white pt-20 pb-10 border-t-4 border-[#b5624a]">
+            <div className="max-w-[1200px] mx-auto px-5 md:px-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8 mb-16">
+                    
+                    {/* Cột 1: Brand Info & Social (Chiếm 4 cột) */}
+                    <div className="lg:col-span-4 pr-0 lg:pr-8">
+                        <div 
+                            className="text-[32px] mb-6 text-[#f5ebe0] cursor-pointer font-display drop-shadow-sm hover:text-white transition-colors"
+                            onClick={() => navigate('/')}
+                        >
+                            Gốm Nâu
+                        </div>
+                        <p className="text-[14px] leading-[1.8] mb-8 text-[#aaa] font-light">
+                            Chúng tôi tin rằng mỗi món đồ gốm đều mang trong mình một linh hồn. Gốm Nâu mang đến đồ gốm mộc mạc thủ công chất lượng cao, lưu giữ vẻ đẹp của Đất Mẹ và bàn tay nghệ nhân Việt.
+                        </p>
+
+                        <div>
+                            <h4 className="text-white mb-4 text-[13px] uppercase tracking-[2px] font-bold">Kết Nối Với Chúng Tôi</h4>
+                            <div className="flex flex-wrap gap-3">
+                                {socialLinks.map((item, i) => (
+                                    <a
+                                        key={i}
+                                        href={item.href}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        aria-label={item.label}
+                                        className="w-10 h-10 rounded-full bg-white/10 border border-white/20
+                                                   flex items-center justify-center text-white
+                                                   transition-all duration-300 hover:bg-[#b5624a] hover:border-[#b5624a] hover:-translate-y-1 shadow-sm"
+                                    >
+                                        {item.icon}
+                                    </a>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                    <button
-                        className="footer-contact-btn"
-                        onClick={() => navigate('/contact')}
-                    >
-                        {' '}
-                        Liên hệ →
-                    </button>
+
+                    {/* Cột 2: Khám Phá (Chiếm 2 cột) */}
+                    <div className="lg:col-span-2">
+                        <h4 className="text-white mb-6 text-[15px] font-display text-[18px]">Khám Phá</h4>
+                        <ul className="flex flex-col gap-4 list-none">
+                            <li>
+                                <button onClick={() => navigate('/about')} className="text-[#aaa] text-[14px] hover:text-[#b5624a] transition-colors duration-300 font-light flex items-center gap-2 group">
+                                    <span className="w-1.5 h-1.5 bg-[#b5624a] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span> Về Gốm Nâu
+                                </button>
+                            </li>
+                            <li>
+                                <button onClick={() => navigate('/shop')} className="text-[#aaa] text-[14px] hover:text-[#b5624a] transition-colors duration-300 font-light flex items-center gap-2 group">
+                                    <span className="w-1.5 h-1.5 bg-[#b5624a] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span> Cửa Hàng
+                                </button>
+                            </li>
+                            <li>
+                                <button onClick={() => navigate('/blog')} className="text-[#aaa] text-[14px] hover:text-[#b5624a] transition-colors duration-300 font-light flex items-center gap-2 group">
+                                    <span className="w-1.5 h-1.5 bg-[#b5624a] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span> Tạp Chí Gốm
+                                </button>
+                            </li>
+                            <li>
+                                <button onClick={() => navigate('/contact')} className="text-[#aaa] text-[14px] hover:text-[#b5624a] transition-colors duration-300 font-light flex items-center gap-2 group">
+                                    <span className="w-1.5 h-1.5 bg-[#b5624a] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span> Liên Hệ
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* Cột 3: Hỗ Trợ Khách Hàng (Chiếm 3 cột) */}
+                    <div className="lg:col-span-3">
+                        <h4 className="text-white mb-6 text-[15px] font-display text-[18px]">Hỗ Trợ Khách Hàng</h4>
+                        <ul className="flex flex-col gap-4 list-none">
+                            <li>
+                                <button onClick={() => navigate('/support/shipping')} className="text-[#aaa] text-[14px] hover:text-[#b5624a] transition-colors duration-300 font-light flex items-center gap-2 group">
+                                    <span className="w-1.5 h-1.5 bg-[#b5624a] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span> Chính Sách Giao Hàng
+                                </button>
+                            </li>
+                            <li>
+                                <button onClick={() => navigate('/support/returns')} className="text-[#aaa] text-[14px] hover:text-[#b5624a] transition-colors duration-300 font-light flex items-center gap-2 group">
+                                    <span className="w-1.5 h-1.5 bg-[#b5624a] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span> Chính Sách Đổi Trả
+                                </button>
+                            </li>
+                            <li>
+                                <button onClick={() => navigate('/support/care')} className="text-[#aaa] text-[14px] hover:text-[#b5624a] transition-colors duration-300 font-light flex items-center gap-2 group">
+                                    <span className="w-1.5 h-1.5 bg-[#b5624a] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span> Hướng Dẫn Bảo Quản
+                                </button>
+                            </li>
+                            <li>
+                                <button onClick={() => navigate('/support/faq')} className="text-[#aaa] text-[14px] hover:text-[#b5624a] transition-colors duration-300 font-light flex items-center gap-2 group">
+                                    <span className="w-1.5 h-1.5 bg-[#b5624a] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span> Câu Hỏi Thường Gặp (FAQ)
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* Cột 4: Thông Tin Liên Hệ (Chiếm 3 cột) */}
+                    <div className="lg:col-span-3">
+                        <h4 className="text-white mb-6 text-[15px] font-display text-[18px]">Thông Tin Liên Hệ</h4>
+                        <div className="flex flex-col gap-5">
+                            <div className="flex items-start gap-3">
+                                <FiMapPin className="text-[#b5624a] mt-1 shrink-0" size={18} />
+                                <p className="text-[#aaa] text-[14px] leading-[1.6] font-light">
+                                    123 Đường Gốm Sứ, Phường Nghệ Thuật, Quận 1, TP. Hồ Chí Minh
+                                </p>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <FiPhone className="text-[#b5624a] mt-1 shrink-0" size={18} />
+                                <div>
+                                    <p className="text-[#aaa] text-[14px] leading-[1.6] font-light">0987 654 321</p>
+                                    <p className="text-[#aaa] text-[12px] opacity-70 mt-1">(T2 - CN: 08:00 - 21:00)</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <FiMail className="text-[#b5624a] mt-1 shrink-0" size={18} />
+                                <p className="text-[#aaa] text-[14px] leading-[1.6] font-light">
+                                    hello@gomnau.vn
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="footer-col">
-                    <h4>About Us</h4>
-                    <ul>
-                        <li>
-                            <a onClick={() => navigate('/About')}>Câu chuyện</a>
-                        </li>
-                        <li>
-                            <a onClick={() => navigate('/About')}>
-                                Đội ngũ nhân sự
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#">Giải thưởng</a>
-                        </li>
-                        <li>
-                            <a href="#">Chính sách riêng tư</a>
-                        </li>
-                    </ul>
-                </div>
-
-                <div className="footer-col">
-                    <h4>Sản phẩm</h4>
-                    <ul>
-                        <li>
-                            <a onClick={() => filterShop('Dinnerware')}>
-                                Gốm gia dụng
-                            </a>
-                        </li>
-                        <li>
-                            <a onClick={() => filterShop('Ceramic')}>
-                                Bình hoa
-                            </a>
-                        </li>
-                        <li>
-                            <a onClick={() => filterShop('Decor Art')}>
-                                Gạch ốp tường
-                            </a>
-                        </li>
-                        <li>
-                            <a onClick={() => filterShop('Gifts sets')}>
-                                Tượng
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <div className="footer-col">
-                    <h4>Hỗ trợ</h4>
-                    <ul>
-                        <li>
-                            <a onClick={() => navigate('contact')}>Liên hệ</a>
-                        </li>
-                        <li>
-                            <a href="#">Giao hàng</a>
-                        </li>
-                        <li>
-                            <a href="#">Hoàn hàng</a>
-                        </li>
-                        <li>
-                            <a href="#">FAQ</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <div className="footer-bottom">
-                <span>© 2025 Gôm Nâu Shop. All Rights Reserved.</span>
-                <div className="footer-bottom-links">
-                    <a href="#">Điều kiện & Điều khoản</a>
-                    <a href="#">Chính sách riêng tư</a>
+                {/* Footer Bottom */}
+                <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center text-[#888] text-[13px] gap-4">
+                    <span>© {new Date().getFullYear()} Gốm Nâu Shop. All Rights Reserved.</span>
+                    <div className="flex gap-6">
+                        <button onClick={() => navigate('/support/terms')} className="hover:text-[#b5624a] transition-colors duration-300">Điều Khoản Dịch Vụ</button>
+                        <button onClick={() => navigate('/support/privacy')} className="hover:text-[#b5624a] transition-colors duration-300">Chính Sách Bảo Mật</button>
+                    </div>
                 </div>
             </div>
         </footer>
     );
 }
-export default Footer;
