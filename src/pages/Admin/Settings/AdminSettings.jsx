@@ -30,7 +30,7 @@ export default function AdminSettings() {
       if (tab === 'store') {
         const res = await api.get('/settings/admin');
         setSiteSettings(res.data.data || []);
-      } else if (tab === 'home') {
+      } else if (tab === 'home' || tab === 'about') {
         const res = await api.get('/settings/home/admin');
         setHomeBlocks(res.data.data || []);
       } else if (tab === 'timeline') {
@@ -76,12 +76,72 @@ export default function AdminSettings() {
     }));
   };
 
+  const handleHomeBlockToggleVisibility = async (block) => {
+    const updatedBlock = { ...block, isVisible: !block.isVisible };
+    setHomeBlocks(prev => prev.map(b => b.blockKey === block.blockKey ? updatedBlock : b));
+    try {
+      await api.put(`/settings/home/${updatedBlock.blockKey}`, {
+        dataJson: updatedBlock.dataJson,
+        isVisible: updatedBlock.isVisible
+      });
+      toast.success(`Đã cập nhật trạng thái hiển thị của block ${block.displayName}`);
+    } catch (err) {
+      toast.error(`Lỗi khi cập nhật trạng thái hiển thị`);
+      // Revert state on error
+      setHomeBlocks(prev => prev.map(b => b.blockKey === block.blockKey ? block : b));
+    }
+  };
+
   const handleHeroSlideChange = (index, field, value) => {
     setHomeBlocks(prev => prev.map(b => {
       if (b.blockKey === 'hero') {
         const data = JSON.parse(b.dataJson || '{"slides":[]}');
         if (!data.slides) data.slides = [];
         data.slides[index] = { ...data.slides[index], [field]: value };
+        return { ...b, dataJson: JSON.stringify(data, null, 2) };
+      }
+      return b;
+    }));
+  };
+
+  const handleArrayChange = (blockKey, arrayField, index, field, value) => {
+    setHomeBlocks(prev => prev.map(b => {
+      if (b.blockKey === blockKey) {
+        const data = JSON.parse(b.dataJson || '{}');
+        if (!data[arrayField]) data[arrayField] = [];
+        if (field === null) {
+            // For primitive arrays (like images)
+            data[arrayField][index] = value;
+        } else {
+            // For object arrays
+            const currentItem = typeof data[arrayField][index] === 'string' ? { image: data[arrayField][index] } : data[arrayField][index];
+            data[arrayField][index] = { ...currentItem, [field]: value };
+        }
+        return { ...b, dataJson: JSON.stringify(data, null, 2) };
+      }
+      return b;
+    }));
+  };
+
+  const addArrayItem = (blockKey, arrayField, defaultItem) => {
+    setHomeBlocks(prev => prev.map(b => {
+      if (b.blockKey === blockKey) {
+        const data = JSON.parse(b.dataJson || '{}');
+        if (!data[arrayField]) data[arrayField] = [];
+        data[arrayField].push(defaultItem);
+        return { ...b, dataJson: JSON.stringify(data, null, 2) };
+      }
+      return b;
+    }));
+  };
+
+  const removeArrayItem = (blockKey, arrayField, index) => {
+    if (!window.confirm('Bạn có chắc muốn xoá mục này?')) return;
+    setHomeBlocks(prev => prev.map(b => {
+      if (b.blockKey === blockKey) {
+        const data = JSON.parse(b.dataJson || '{}');
+        if (!data[arrayField]) return b;
+        data[arrayField].splice(index, 1);
         return { ...b, dataJson: JSON.stringify(data, null, 2) };
       }
       return b;
@@ -208,25 +268,240 @@ export default function AdminSettings() {
         <p className="text-sm text-gray-500 mt-1">Quản lý cấu hình website, trang chủ và email.</p>
       </div>
 
+      {/* ── Cửa hàng Tab ── */}
+      {activeTab === 'shop' && (
+        <div className="space-y-6 animate-fade-in">
+          {homeBlocks
+            .filter(b => b.blockKey.startsWith('shop_'))
+            .sort((a, b) => a.sortOrder - b.sortOrder)
+            .map(block => {
+              const data = JSON.parse(block.dataJson || '{}');
+              return (
+                <div key={block.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="border-b border-gray-100 bg-gray-50 px-5 py-4">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        <h3 className="font-semibold text-gray-900">{block.displayName}</h3>
+                        <span className="text-xs text-gray-500 font-mono bg-white px-2 py-0.5 rounded border border-gray-200">
+                          {block.blockKey}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">Trạng thái:</span>
+                          <div className={`w-10 h-5 flex items-center bg-gray-300 rounded-full p-1 transition-colors duration-300 ease-in-out ${block.isVisible ? 'bg-green-500' : ''}`}>
+                            <div
+                              className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ease-in-out ${block.isVisible ? 'translate-x-4' : ''}`}
+                              onClick={(e) => { e.preventDefault(); handleHomeBlockToggleVisibility(block); }}
+                            ></div>
+                          </div>
+                        </label>
+                        <button
+                          onClick={() => saveHomeBlock(block)}
+                          className="flex items-center gap-1 text-sm bg-[#1a1a1a] text-white px-3 py-1.5 rounded-md hover:bg-[#b5624a] transition-colors"
+                        >
+                          <FiSave size={14} /> Lưu Block
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {['title', 'subtitle', 'description'].map(key => data[key] !== undefined && (
+                          <div key={key} className={key === 'description' ? 'md:col-span-2' : ''}>
+                            <label className="block text-xs font-medium text-gray-700 mb-1 capitalize">{key === 'subtitle' ? 'Phụ đề' : key === 'description' ? 'Mô tả' : 'Tiêu đề'}</label>
+                            {key === 'description' ? (
+                              <textarea value={data[key] || ''} onChange={(e) => handleHomeBlockChange(block.blockKey, key, e.target.value)} rows={3} className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm" />
+                            ) : (
+                              <input type="text" value={data[key] || ''} onChange={(e) => handleHomeBlockChange(block.blockKey, key, e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm" />
+                            )}
+                          </div>
+                      ))}
+                      
+                      {/* Image Upload for shop_hero */}
+                      {data.image !== undefined && (
+                        <div className="md:col-span-2 mt-4 pt-4 border-t">
+                           <label className="block text-xs font-medium text-gray-700 mb-2">Hình ảnh Banner</label>
+                           <div className="flex gap-4 items-start">
+                             <div className="w-40 h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex-shrink-0 cursor-pointer relative group"
+                                  onClick={() => data.image && setPreviewImage(data.image)}>
+                               {data.image ? (
+                                 <>
+                                   <img src={data.image} alt="Banner" className="w-full h-full object-cover" />
+                                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <FiImage className="text-white w-6 h-6" />
+                                   </div>
+                                 </>
+                               ) : (
+                                 <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                                   <FiImage size={24} className="mb-1" />
+                                   <span className="text-[10px]">Chưa có ảnh</span>
+                                 </div>
+                               )}
+                             </div>
+                             <div className="flex-1 space-y-3">
+                               <input 
+                                 type="text" 
+                                 value={data.image || ''} 
+                                 onChange={(e) => handleHomeBlockChange(block.blockKey, 'image', e.target.value)} 
+                                 className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm" 
+                                 placeholder="Nhập URL ảnh hoặc upload" 
+                               />
+                               <div className="relative inline-block">
+                                 <button type="button" className={`flex items-center gap-2 text-sm px-4 py-2 rounded-md transition-colors ${uploadingField === `${block.blockKey}_image` ? 'bg-gray-100 text-gray-500 cursor-wait' : 'bg-primary-50 text-primary-600 hover:bg-primary-100'}`}>
+                                   {uploadingField === `${block.blockKey}_image` ? <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span> : <FiUpload />}
+                                   Tải ảnh lên
+                                 </button>
+                                 <input 
+                                   type="file" 
+                                   accept="image/*" 
+                                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-wait"
+                                   disabled={!!uploadingField}
+                                   onChange={(e) => {
+                                     setUploadingField(`${block.blockKey}_image`);
+                                     handleFileUpload(e, (url) => handleHomeBlockChange(block.blockKey, 'image', url));
+                                   }} 
+                                 />
+                               </div>
+                             </div>
+                           </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      )}
+
+      {/* ── Liên hệ Tab ── */}
+      {activeTab === 'contact' && (
+        <div className="space-y-6 animate-fade-in">
+          {homeBlocks
+            .filter(b => b.blockKey.startsWith('contact_'))
+            .sort((a, b) => a.sortOrder - b.sortOrder)
+            .map(block => {
+              const data = JSON.parse(block.dataJson || '{}');
+              return (
+                <div key={block.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="border-b border-gray-100 bg-gray-50 px-5 py-4">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        <h3 className="font-semibold text-gray-900">{block.displayName}</h3>
+                        <span className="text-xs text-gray-500 font-mono bg-white px-2 py-0.5 rounded border border-gray-200">
+                          {block.blockKey}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">Trạng thái:</span>
+                          <div className={`w-10 h-5 flex items-center bg-gray-300 rounded-full p-1 transition-colors duration-300 ease-in-out ${block.isVisible ? 'bg-green-500' : ''}`}>
+                            <div
+                              className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ease-in-out ${block.isVisible ? 'translate-x-4' : ''}`}
+                              onClick={(e) => { e.preventDefault(); handleHomeBlockToggleVisibility(block); }}
+                            ></div>
+                          </div>
+                        </label>
+                        <button
+                          onClick={() => saveHomeBlock(block)}
+                          className="flex items-center gap-1 text-sm bg-[#1a1a1a] text-white px-3 py-1.5 rounded-md hover:bg-[#b5624a] transition-colors"
+                        >
+                          <FiSave size={14} /> Lưu Block
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {['title', 'description'].map(key => data[key] !== undefined && (
+                          <div key={key} className={key === 'description' ? 'md:col-span-2' : ''}>
+                            <label className="block text-xs font-medium text-gray-700 mb-1 capitalize">{key === 'description' ? 'Mô tả' : 'Tiêu đề'}</label>
+                            {key === 'description' ? (
+                              <textarea value={data[key] || ''} onChange={(e) => handleHomeBlockChange(block.blockKey, key, e.target.value)} rows={3} className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm" />
+                            ) : (
+                              <input type="text" value={data[key] || ''} onChange={(e) => handleHomeBlockChange(block.blockKey, key, e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm" />
+                            )}
+                          </div>
+                      ))}
+                      
+                      {/* Image Upload for contact_hero */}
+                      {data.image !== undefined && (
+                        <div className="md:col-span-2 mt-4 pt-4 border-t">
+                           <label className="block text-xs font-medium text-gray-700 mb-2">Hình ảnh Banner</label>
+                           <div className="flex gap-4 items-start">
+                             <div className="w-40 h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex-shrink-0 cursor-pointer relative group"
+                                  onClick={() => data.image && setPreviewImage(data.image)}>
+                               {data.image ? (
+                                 <>
+                                   <img src={data.image} alt="Banner" className="w-full h-full object-cover" />
+                                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <FiImage className="text-white w-6 h-6" />
+                                   </div>
+                                 </>
+                               ) : (
+                                 <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                                   <FiImage size={24} className="mb-1" />
+                                   <span className="text-[10px]">Chưa có ảnh</span>
+                                 </div>
+                               )}
+                             </div>
+                             <div className="flex-1 space-y-3">
+                               <input 
+                                 type="text" 
+                                 value={data.image || ''} 
+                                 onChange={(e) => handleHomeBlockChange(block.blockKey, 'image', e.target.value)} 
+                                 className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm" 
+                                 placeholder="Nhập URL ảnh hoặc upload" 
+                               />
+                               <div className="relative inline-block">
+                                 <button type="button" className={`flex items-center gap-2 text-sm px-4 py-2 rounded-md transition-colors ${uploadingField === `${block.blockKey}_image` ? 'bg-gray-100 text-gray-500 cursor-wait' : 'bg-primary-50 text-primary-600 hover:bg-primary-100'}`}>
+                                   {uploadingField === `${block.blockKey}_image` ? <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span> : <FiUpload />}
+                                   Tải ảnh lên
+                                 </button>
+                                 <input 
+                                   type="file" 
+                                   accept="image/*" 
+                                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-wait"
+                                   disabled={!!uploadingField}
+                                   onChange={(e) => {
+                                     setUploadingField(`${block.blockKey}_image`);
+                                     handleFileUpload(e, (url) => handleHomeBlockChange(block.blockKey, 'image', url));
+                                   }} 
+                                 />
+                               </div>
+                             </div>
+                           </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      )}
+
       {/* Navigation Tabs */}
       <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {[
-            { id: 'store', label: 'Cấu hình chung' },
-            { id: 'home', label: 'Trang chủ' },
-            { id: 'timeline', label: 'Dấu ấn lịch sử' },
-            { id: 'email', label: 'Email Templates' }
-          ].map(tab => (
+        <nav className="-mb-px flex space-x-6 overflow-x-auto">
+          {['home', 'about', 'shop', 'contact', 'emails', 'general'].map(tab => (
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === tab.id
-                  ? 'border-[#b5624a] text-[#b5624a]'
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === tab 
+                  ? 'border-[#b5624a] text-[#b5624a]' 
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              {tab.label}
+              {tab === 'home' ? 'Trang chủ' : 
+               tab === 'about' ? 'Giới thiệu' :
+               tab === 'shop' ? 'Cửa hàng' :
+               tab === 'contact' ? 'Liên hệ' :
+               tab === 'emails' ? 'Mẫu Email' : 'Cấu hình chung'}
             </button>
           ))}
         </nav>
@@ -329,10 +604,10 @@ export default function AdminSettings() {
               </div>
             )}
 
-            {/* ── TAB: TRANG CHỦ ── */}
-            {activeTab === 'home' && (
+            {/* ── TAB: TRANG CHỦ & GIỚI THIỆU ── */}
+            {(activeTab === 'home' || activeTab === 'about') && (
               <div className="space-y-6">
-                {homeBlocks.map(block => {
+                {homeBlocks.filter(b => activeTab === 'home' ? (!b.blockKey.startsWith('about_') && b.blockKey !== 'brand_story') : (b.blockKey.startsWith('about_') || b.blockKey === 'brand_story')).map(block => {
                   const data = JSON.parse(block.dataJson || '{}');
                   return (
                     <div key={block.blockKey} className="border border-gray-200 rounded-lg p-5">
@@ -344,7 +619,7 @@ export default function AdminSettings() {
                             <div className={`w-10 h-5 flex items-center bg-gray-300 rounded-full p-1 transition-colors duration-300 ease-in-out ${block.isVisible ? 'bg-green-500' : ''}`}>
                               <div
                                 className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ease-in-out ${block.isVisible ? 'translate-x-4' : ''}`}
-                                onClick={() => handleHomeBlockChange(block.blockKey, 'isVisible', !block.isVisible)}
+                                onClick={(e) => { e.preventDefault(); handleHomeBlockToggleVisibility(block); }}
                               ></div>
                             </div>
                           </label>
@@ -443,9 +718,101 @@ export default function AdminSettings() {
                             </div>
                           ))}
                         </div>
+                      ) : (block.blockKey === 'brand_story' || block.blockKey === 'about_gallery') ? (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {(block.blockKey === 'brand_story' ? ['subtitle', 'title', 'content'] : ['title', 'subtitle', 'instagramLink', 'instagramText']).map(key => (
+                                <div key={key} className={key === 'content' ? 'md:col-span-2' : ''}>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1 capitalize">{key === 'subtitle' ? 'Phụ đề (Subtitle)' : key}</label>
+                                  {key === 'content' ? (
+                                    <textarea value={data[key] || ''} onChange={(e) => handleHomeBlockChange(block.blockKey, key, e.target.value)} rows={3} className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm" />
+                                  ) : (
+                                    <input type="text" value={data[key] || ''} onChange={(e) => handleHomeBlockChange(block.blockKey, key, e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm" />
+                                  )}
+                                </div>
+                            ))}
+                          </div>
+                          
+                          <div className="border-t pt-4">
+                            <div className="flex justify-between items-center mb-4">
+                              <span className="text-sm font-medium text-gray-700">Danh sách Hình ảnh</span>
+                              <button type="button" onClick={() => addArrayItem(block.blockKey, 'images', { image: '', link: '' })} className="flex items-center gap-1 text-sm bg-primary-50 text-primary-600 px-3 py-1.5 rounded-md hover:bg-primary-100">
+                                <FiPlus size={14} /> Thêm ảnh
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-1 gap-4">
+                              {data.images?.map((img, idx) => {
+                                const imgSrc = typeof img === 'string' ? img : img.image;
+                                const imgLink = typeof img === 'string' ? '' : (img.link || '');
+                                return (
+                                <div key={idx} className="flex flex-col gap-2 border p-3 rounded bg-gray-50 relative">
+                                  <button type="button" onClick={() => removeArrayItem(block.blockKey, 'images', idx)} className="absolute top-2 right-2 text-red-500 hover:bg-red-50 p-1 rounded"><FiTrash2 /></button>
+                                  <div className="flex gap-4 items-start mt-2">
+                                    <div className="flex-1 space-y-2">
+                                      <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">URL Hình ảnh</label>
+                                        <input type="text" value={imgSrc || ''} onChange={(e) => handleArrayChange(block.blockKey, 'images', idx, 'image', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm" placeholder="https://..." />
+                                      </div>
+                                      <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">Link chuyển hướng (Tuỳ chọn)</label>
+                                        <input type="text" value={imgLink || ''} onChange={(e) => handleArrayChange(block.blockKey, 'images', idx, 'link', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm" placeholder="VD: /shop hoặc https://..." />
+                                      </div>
+                                    </div>
+                                    {imgSrc && <img src={imgSrc} alt="preview" className="w-20 h-20 object-cover rounded shadow-sm cursor-pointer border" onClick={() => setPreviewImage(imgSrc)} />}
+                                  </div>
+                                </div>
+                              )})}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (block.blockKey === 'about_stats') ? (
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center mb-4 border-b pb-2">
+                              <span className="text-sm font-medium text-gray-700">Thống Kê</span>
+                              <button type="button" onClick={() => addArrayItem(block.blockKey, 'stats', {number:'', label:''})} className="flex items-center gap-1 text-sm bg-primary-50 text-primary-600 px-3 py-1.5 rounded-md hover:bg-primary-100">
+                                <FiPlus size={14} /> Thêm Thống Kê
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {data.stats?.map((stat, idx) => (
+                                <div key={idx} className="flex gap-2 items-start border p-3 rounded bg-gray-50 relative">
+                                  <button type="button" onClick={() => removeArrayItem(block.blockKey, 'stats', idx)} className="absolute top-2 right-2 text-red-500 hover:text-red-700"><FiTrash2 /></button>
+                                  <div className="flex-1 space-y-2">
+                                    <input type="text" value={stat.number} onChange={(e) => handleArrayChange(block.blockKey, 'stats', idx, 'number', e.target.value)} placeholder="Số (VD: 5+)" className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm" />
+                                    <input type="text" value={stat.label} onChange={(e) => handleArrayChange(block.blockKey, 'stats', idx, 'label', e.target.value)} placeholder="Nhãn (VD: Năm Thành Lập)" className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm" />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                        </div>
+                      ) : (block.blockKey === 'about_values') ? (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 gap-4">
+                                <div><label className="text-xs font-medium text-gray-700">Tiêu đề</label><input type="text" value={data.title||''} onChange={(e) => handleHomeBlockChange(block.blockKey, 'title', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm" /></div>
+                                <div><label className="text-xs font-medium text-gray-700">Mô tả</label><textarea value={data.description||''} onChange={(e) => handleHomeBlockChange(block.blockKey, 'description', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm" /></div>
+                            </div>
+                            <div className="flex justify-between items-center mb-4 border-b pt-4 pb-2">
+                              <span className="text-sm font-medium text-gray-700">Danh sách Giá Trị</span>
+                              <button type="button" onClick={() => addArrayItem(block.blockKey, 'values', {image:'', title:'', description:'', icon:''})} className="flex items-center gap-1 text-sm bg-primary-50 text-primary-600 px-3 py-1.5 rounded-md hover:bg-primary-100">
+                                <FiPlus size={14} /> Thêm
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {data.values?.map((val, idx) => (
+                                <div key={idx} className="flex gap-4 items-start border p-4 rounded bg-gray-50 relative">
+                                  <button type="button" onClick={() => removeArrayItem(block.blockKey, 'values', idx)} className="absolute top-2 right-2 text-red-500 hover:text-red-700"><FiTrash2 /></button>
+                                  <div className="flex-1 space-y-3">
+                                    <input type="text" value={val.image} onChange={(e) => handleArrayChange(block.blockKey, 'values', idx, 'image', e.target.value)} placeholder="URL Hình Nền" className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm" />
+                                    <input type="text" value={val.title} onChange={(e) => handleArrayChange(block.blockKey, 'values', idx, 'title', e.target.value)} placeholder="Tiêu đề" className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm" />
+                                    <textarea value={val.description} onChange={(e) => handleArrayChange(block.blockKey, 'values', idx, 'description', e.target.value)} placeholder="Mô tả" className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm" />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                        </div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {Object.keys(data).map(key => (
+                          {Object.keys(data).filter(key => typeof data[key] !== 'object').map(key => (
                             <div key={key} className={key === 'content' || key === 'description' ? 'md:col-span-2' : ''}>
                               <label className="block text-xs font-medium text-gray-700 mb-1 capitalize">{key}</label>
                               {key === 'content' || key === 'description' ? (

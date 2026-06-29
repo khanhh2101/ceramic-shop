@@ -1,13 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { settingsService } from '../../services';
 import toast from 'react-hot-toast';
+import api from '../../services/api';
 import { FiMapPin, FiPhone, FiMail } from 'react-icons/fi';
 import { FaFacebookF, FaInstagram, FaPinterestP, FaTiktok } from 'react-icons/fa';
 import { SiZalo } from 'react-icons/si';
 
 export default function ContactPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [contactHero, setContactHero] = useState(null);
+
+    useEffect(() => {
+        api.get('/settings/home').then(res => {
+            const blocks = res.data.data || [];
+            const heroBlock = blocks.find(b => b.blockKey === 'contact_hero');
+            if (heroBlock && heroBlock.isVisible) {
+                try {
+                    const parsed = JSON.parse(heroBlock.dataJson);
+                    setContactHero(parsed);
+                } catch (e) {
+                    console.error('Error parsing contact_hero', e);
+                }
+            }
+        }).catch(err => console.error(err));
+    }, []);
     
     const { register, handleSubmit, formState: { errors }, reset } = useForm();
 
@@ -30,24 +47,45 @@ export default function ContactPage() {
     return (
         <div className="bg-[#faf7f4] min-h-screen pb-20">
             {/* ── Hero Banner ── */}
-            <div className="relative h-[40vh] min-h-[350px] mb-16 flex items-center justify-center bg-[#eee8df] overflow-hidden">
-                <div className="absolute inset-0">
-                    <img 
-                        src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=2000&auto=format&fit=crop" 
-                        alt="Contact Banner"
-                        className="w-full h-full object-cover opacity-80"
-                    />
-                    <div className="absolute inset-0 bg-black/40"></div>
+            {contactHero ? (
+                <div className="relative h-[40vh] min-h-[350px] mb-16 flex items-center justify-center bg-[#eee8df] overflow-hidden">
+                    <div className="absolute inset-0">
+                        <img 
+                            src={contactHero.image || "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=2000&auto=format&fit=crop"} 
+                            alt={contactHero.title}
+                            className="w-full h-full object-cover opacity-80"
+                        />
+                        <div className="absolute inset-0 bg-black/40"></div>
+                    </div>
+                    <div className="relative z-10 text-center px-5 max-w-[800px] mx-auto text-white mt-10">
+                        <h1 className="text-[40px] md:text-[56px] font-display mb-4 drop-shadow-md">
+                            {contactHero.title}
+                        </h1>
+                        <p className="text-[15px] md:text-[18px] font-light opacity-90 max-w-[600px] mx-auto drop-shadow-sm">
+                            {contactHero.description}
+                        </p>
+                    </div>
                 </div>
-                <div className="relative z-10 text-center px-5 max-w-[800px] mx-auto text-white mt-10">
-                    <h1 className="text-[40px] md:text-[56px] font-display mb-4 drop-shadow-md">
-                        Trò Chuyện Cùng Gốm Nâu
-                    </h1>
-                    <p className="text-[15px] md:text-[18px] font-light opacity-90 max-w-[600px] mx-auto drop-shadow-sm">
-                        Bạn có câu hỏi, ý tưởng hay cần tư vấn? Đừng ngần ngại để lại lời nhắn, chúng tôi luôn sẵn sàng lắng nghe.
-                    </p>
+            ) : (
+                <div className="relative h-[40vh] min-h-[350px] mb-16 flex items-center justify-center bg-[#eee8df] overflow-hidden">
+                    <div className="absolute inset-0">
+                        <img 
+                            src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=2000&auto=format&fit=crop" 
+                            alt="Contact Banner"
+                            className="w-full h-full object-cover opacity-80"
+                        />
+                        <div className="absolute inset-0 bg-black/40"></div>
+                    </div>
+                    <div className="relative z-10 text-center px-5 max-w-[800px] mx-auto text-white mt-10">
+                        <h1 className="text-[40px] md:text-[56px] font-display mb-4 drop-shadow-md">
+                            Trò Chuyện Cùng Gốm Nâu
+                        </h1>
+                        <p className="text-[15px] md:text-[18px] font-light opacity-90 max-w-[600px] mx-auto drop-shadow-sm">
+                            Bạn có câu hỏi, ý tưởng hay cần tư vấn? Đừng ngần ngại để lại lời nhắn, chúng tôi luôn sẵn sàng lắng nghe.
+                        </p>
+                    </div>
                 </div>
-            </div>
+            )}
 
             <div className="max-w-[1200px] mx-auto px-5 md:px-10">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">

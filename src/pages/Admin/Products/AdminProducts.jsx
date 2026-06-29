@@ -3,6 +3,7 @@ import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiImage, FiX, FiCheck, FiRefreshCw
 import toast from 'react-hot-toast';
 import Modal from '@/components/common/Modal';
 import api from '@/services/api';
+import { mediaService } from '@/services/index';
 import ImageCropperModal from '@/components/common/ImageCropperModal';
 import Button from '@/components/common/Button';
 import Input from '@/components/common/Input';
@@ -360,11 +361,7 @@ export default function AdminProducts() {
       }
 
       if (uploadFiles.length > 0 && productId) {
-        const form = new FormData();
-        uploadFiles.forEach(f => form.append('files', f));
-        await api.post(`/media/product/${productId}/images`, form, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        await mediaService.uploadProductImages(productId, uploadFiles);
         toast.success('Tải ảnh mới lên thành công');
       }
 

@@ -317,7 +317,7 @@ export default function Home() {
             </div>
 
             {/* ── REDESIGNED PROMO BANNER (Chỉ hiện khi isVisible = true) ── */}
-            {(!promoBlock || promoBlock.isVisible) && (
+            {promoBlock && (
                 <div className="bg-[#e6ddcf] text-[#1a1a1a]">
                     <div className="grid grid-cols-1 lg:grid-cols-2">
                         {/* Ảnh bên trái */}

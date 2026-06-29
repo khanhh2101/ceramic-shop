@@ -5,6 +5,7 @@ import { FiFilter, FiX, FiChevronDown, FiSliders } from 'react-icons/fi';
 import { productService, categoryService } from '../../services';
 import ProductCard from '../../components/product/ProductCard';
 import Pagination from '../../components/common/Pagination';
+import api from '../../services/api';
 
 // ── Shop Page ─────────────────────────────────────────────────────────────────
 // Trang cửa hàng với filter sidebar + danh sách sản phẩm dạng grid.
@@ -22,6 +23,22 @@ const SORT_OPTIONS = [
 export default function ShopPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [filterOpen, setFilterOpen] = useState(false);
+  const [shopHero, setShopHero] = useState(null);
+
+  useEffect(() => {
+      api.get('/settings/home').then(res => {
+          const blocks = res.data.data || [];
+          const heroBlock = blocks.find(b => b.blockKey === 'shop_hero');
+          if (heroBlock && heroBlock.isVisible) {
+              try {
+                  const parsed = JSON.parse(heroBlock.dataJson);
+                  setShopHero(parsed);
+              } catch (e) {
+                  console.error('Error parsing shop_hero', e);
+              }
+          }
+      }).catch(err => console.error(err));
+  }, []);
 
   // Lấy filter từ URL
   const page = parseInt(searchParams.get('page') || '1');
@@ -76,14 +93,42 @@ export default function ShopPage() {
   const hasFilter = search || categoryId || minPrice || maxPrice;
 
   return (
-    <div className="page-container py-8">
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="section-title">Cửa hàng</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {isLoading ? 'Đang tải...' : `${totalCount} sản phẩm`}
-          </p>
-        </div>
+    <div className="bg-[#faf7f4] min-h-screen">
+      {/* ── Hero Banner ── */}
+      {shopHero && (
+          <div className="relative h-[40vh] min-h-[350px] mb-8 flex items-center justify-center bg-[#eee8df] overflow-hidden">
+              <div className="absolute inset-0">
+                  <img 
+                      src={shopHero.image || "https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=2000&auto=format&fit=crop"} 
+                      alt={shopHero.title}
+                      className="w-full h-full object-cover opacity-80"
+                  />
+                  <div className="absolute inset-0 bg-black/40"></div>
+              </div>
+              <div className="relative z-10 text-center px-5 max-w-[800px] mx-auto text-white mt-10">
+                  {shopHero.subtitle && (
+                      <div className="inline-block px-4 py-1.5 bg-[#b5624a] text-white rounded-full text-[11px] font-bold tracking-[3px] uppercase mb-4 shadow-md">
+                          {shopHero.subtitle}
+                      </div>
+                  )}
+                  <h1 className="text-[40px] md:text-[56px] font-display mb-4 drop-shadow-md">
+                      {shopHero.title}
+                  </h1>
+                  <p className="text-[15px] md:text-[18px] font-light opacity-90 max-w-[600px] mx-auto drop-shadow-sm">
+                      {shopHero.description}
+                  </p>
+              </div>
+          </div>
+      )}
+
+      <div className="page-container py-8">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            {!shopHero && <h1 className="section-title">Cửa hàng</h1>}
+            <p className="text-gray-500 text-sm mt-1">
+              {isLoading ? 'Đang tải...' : `${totalCount} sản phẩm`}
+            </p>
+          </div>
 
         <div className="flex items-center gap-3">
           {/* Sort */}

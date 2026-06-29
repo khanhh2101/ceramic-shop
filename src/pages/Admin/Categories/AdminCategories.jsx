@@ -3,6 +3,7 @@ import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiTag } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import Modal from '@/components/common/Modal';
 import api from '@/services/api';
+import { mediaService } from '@/services/index';
 import Button from '@/components/common/Button';
 import Input from '@/components/common/Input';
 import Textarea from '@/components/common/Textarea';
@@ -101,17 +102,13 @@ export default function AdminCategories() {
     const file = e.target.files[0];
     if (!file) return;
     
-    const uploadData = new FormData();
-    uploadData.append('file', file);
-    
     try {
       setUploadingImage(true);
-      const res = await api.post('/media/upload?bucket=categories', uploadData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const res = await mediaService.upload(file, 'categories', 'Category');
       setFormData({ ...formData, imageUrl: res.data.data.url });
       toast.success('Tải ảnh lên thành công');
     } catch (err) {
+      console.error(err);
       toast.error('Lỗi khi tải ảnh lên');
     } finally {
       setUploadingImage(false);
