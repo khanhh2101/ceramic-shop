@@ -356,7 +356,7 @@ export default function AdminProducts() {
         toast.success('Cập nhật thành công');
       } else {
         const res = await api.post('/products', payload);
-        productId = res.data.data.id;
+        productId = res.data?.data?.id || res.data?.data?.Id || res.data?.id || res.data?.Id;
         toast.success('Thêm sản phẩm thành công');
       }
 
@@ -368,7 +368,8 @@ export default function AdminProducts() {
       handleCloseModal();
       fetchProducts();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Có lỗi xảy ra');
+      console.error('Lỗi khi lưu sản phẩm:', err);
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại');
     }
   };
 

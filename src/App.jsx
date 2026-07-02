@@ -74,6 +74,7 @@ export default function App() {
               duration: 3000,
               style: { borderRadius: '8px', fontFamily: 'inherit', fontSize: '14px' },
             }}
+            containerStyle={{ zIndex: 999999 }}
           />
 
           <Routes>
