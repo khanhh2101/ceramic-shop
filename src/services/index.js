@@ -51,6 +51,8 @@ export const orderService = {
   validateCart: (data) => api.post('/orders/validate-cart', data),
   getMyOrders: (params) => api.get('/orders/my', { params }),
   getById: (id) => api.get(`/orders/${id}`),
+  getByCode: (orderCode) => api.get(`/orders/code/${orderCode}`),
+  getByTrackingToken: (trackingToken) => api.get(`/orders/track/${trackingToken}`),
   cancel: (id) => api.post(`/orders/${id}/cancel`),
   // Admin
   getAll: (params) => api.get('/orders/admin', { params }),

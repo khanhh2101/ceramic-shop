@@ -71,7 +71,7 @@ export default function AdminOrders() {
 
   const handleOpenModal = async (orderId) => {
     try {
-      const res = await api.get(`/orders/${orderId}`);
+      const res = await api.get(`/orders/code/${orderId}`);
       setSelectedOrder(res.data.data);
       setIsModalOpen(true);
     } catch (err) {

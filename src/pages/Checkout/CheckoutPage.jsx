@@ -147,6 +147,7 @@ export default function CheckoutPage() {
                 receiverPhone: data.receiverPhone,
                 receiverEmail: data.receiverEmail,
                 province: provinceName || data.province,
+                district: isNewStructure ? '' : (districtName || data.district),
                 ward: isNewStructure ? (wardName || data.ward) : `${wardName || data.ward}, ${districtName || data.district}`,
                 addressDetail: data.addressDetail,
                 note: data.note,
@@ -171,19 +172,17 @@ export default function CheckoutPage() {
             });
             dispatch(clearSelection());
             
-            const orderId = res.data?.data?.id || res.data?.id;
+            const orderId = res.data?.data?.id || res.data?.id || res.data?.data?.orderId;
             if (orderId) {
                 navigate(`/orders/${orderId}`);
             } else {
                 navigate('/orders');
             }
         } catch (error) {
-            if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
-                // Hiển thị chi tiết lỗi tồn kho
-                error.response.data.errors.forEach(err => toast.error(err, { duration: 5000 }));
+            // Xử lý lỗi validate từ backend (chuỗi error)
+            if (error.response?.data?.error) {
+                toast.error(error.response.data.error, { duration: 5000 });
                 toast.error("Vui lòng quay lại giỏ hàng để cập nhật số lượng.");
-                
-                // Điều hướng về giỏ hàng
                 setTimeout(() => navigate('/cart'), 2000);
             } else {
                 toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi đặt hàng');

@@ -11,6 +11,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5011';
 const api = axios.create({
   baseURL: `${BASE_URL}/api`,
   timeout: 30000, // 30 giây
+  withCredentials: true, // Gửi cookie đính kèm request
   headers: {
     'Content-Type': 'application/json',
   },
@@ -71,24 +72,24 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       const accessToken = localStorage.getItem('accessToken');
-      const refreshToken = localStorage.getItem('refreshToken');
 
-      if (!accessToken || !refreshToken) {
+      if (!accessToken) {
         // Không có token → đăng xuất
         clearAuthAndRedirect();
         return Promise.reject(error);
       }
 
       try {
-        // Gọi API refresh token
+        // Gọi API refresh token, cookie refreshToken sẽ tự động được gửi
         const { data } = await axios.post(`${BASE_URL}/api/auth/refresh`, {
-          accessToken,
-          refreshToken,
+          accessToken
+        }, {
+          withCredentials: true // Đảm bảo axios gửi cookie
         });
 
         const newToken = data.data.accessToken;
         localStorage.setItem('accessToken', newToken);
-        localStorage.setItem('refreshToken', data.data.refreshToken);
+        // Refresh token giờ nằm trong HttpOnly cookie, không lưu localStorage nữa
 
         api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
         processQueue(null, newToken);
@@ -111,7 +112,6 @@ api.interceptors.response.use(
 
 function clearAuthAndRedirect() {
   localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
   localStorage.removeItem('user');
   window.location.href = '/auth/login';
 }

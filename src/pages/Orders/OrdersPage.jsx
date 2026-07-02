@@ -88,15 +88,15 @@ export default function OrdersPage() {
                     <div className="space-y-6">
                         {orders.map((order) => {
                             const statusInfo = getStatusInfo(order.status);
-                            const totalItems = order.orderItems?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-                            const firstItem = order.orderItems?.[0];
+                            const totalItems = order.itemCount || 0;
+                            const firstItemImage = order.firstItemImage || '/assets/image/placeholder.jpg';
 
                             return (
                                 <div key={order.id} className="bg-white p-6 md:p-8 rounded-sm shadow-sm flex flex-col md:flex-row gap-6 items-start md:items-center justify-between group">
                                     <div className="flex-1 w-full">
                                         <div className="flex flex-wrap items-center gap-3 mb-4">
                                             <span className="text-[16px] font-medium text-[#1a1a1a]" style={{ fontFamily: 'var(--font-display)' }}>
-                                                #{order.id?.toString().slice(0, 8).toUpperCase() || order.id}
+                                                #{order.orderCode || order.id}
                                             </span>
                                             <span 
                                                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium text-white shadow-sm"
@@ -111,24 +111,22 @@ export default function OrdersPage() {
                                         </div>
 
                                         <div className="flex gap-4">
-                                            {firstItem && (
-                                                <div className="w-16 h-16 bg-[#faf7f4] shrink-0 rounded-sm overflow-hidden">
-                                                    <img 
-                                                        src={firstItem.product?.primaryImageUrl || '/assets/image/placeholder.jpg'} 
-                                                        alt={firstItem.product?.name}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </div>
-                                            )}
+                                            <div className="w-16 h-16 bg-[#faf7f4] shrink-0 rounded-sm overflow-hidden border border-[#eee]">
+                                                <img 
+                                                    src={firstItemImage} 
+                                                    alt="Sản phẩm"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
                                             <div>
                                                 <p className="text-[14px] text-[#1a1a1a] mb-1 line-clamp-1" style={{ fontFamily: 'var(--font-display)' }}>
-                                                    {firstItem?.product?.name || 'Sản phẩm gốm'}
+                                                    {totalItems > 0 ? `${totalItems} sản phẩm` : 'Sản phẩm gốm'}
                                                 </p>
                                                 {totalItems > 1 && (
-                                                    <p className="text-[12px] text-[#888]">...và {totalItems - 1} sản phẩm khác</p>
+                                                    <p className="text-[12px] text-[#888]">Bao gồm nhiều mặt hàng</p>
                                                 )}
                                                 <p className="text-[14px] text-[var(--terracotta)] font-medium mt-2" style={{ fontFamily: 'var(--font-display)' }}>
-                                                    {(order.totalAmount || 0).toLocaleString('vi-VN')} ₫
+                                                    {(order.total || 0).toLocaleString('vi-VN')} ₫
                                                 </p>
                                             </div>
                                         </div>
@@ -136,7 +134,7 @@ export default function OrdersPage() {
 
                                     <div className="w-full md:w-auto shrink-0 border-t md:border-t-0 md:border-l border-[#eee] pt-4 md:pt-0 md:pl-6 text-right">
                                         <Link 
-                                            to={`/orders/${order.id}`}
+                                            to={`/orders/${order.orderCode || order.id}`}
                                             className="inline-block w-full md:w-auto text-center px-6 py-2.5 border border-[#1a1a1a] text-[#1a1a1a] 
                                                      text-[12px] uppercase tracking-[1px] hover:bg-[#1a1a1a] hover:text-white transition-colors duration-200"
                                         >

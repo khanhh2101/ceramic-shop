@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectUser, updateCurrentUser } from '../../store/slices/authSlice';
 import { userService } from '../../services';
 import toast from 'react-hot-toast';
-import { FiUser, FiLock, FiMail, FiPhone, FiMapPin, FiCamera, FiPlus, FiEdit2, FiTrash2, FiCheck, FiX } from 'react-icons/fi';
+import { FiUser, FiLock, FiMail, FiPhone, FiMapPin, FiCamera, FiPlus, FiEdit2, FiTrash2, FiCheck, FiX, FiPackage } from 'react-icons/fi';
 import Modal from '../../components/common/Modal';
 
 export default function ProfilePage() {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const user = useSelector(selectUser);
     
     const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'password' | 'address'
@@ -242,6 +244,12 @@ export default function ProfilePage() {
                                         ${activeTab === 'profile' ? 'bg-[#1a1a1a] text-white' : 'text-[#555] hover:bg-[#faf7f4]'}`}
                                 >
                                     <FiUser size={16} /> Thông tin cá nhân
+                                </button>
+                                <button 
+                                    onClick={() => navigate('/orders')}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-[13px] tracking-[1px] uppercase transition-colors rounded-sm text-[#555] hover:bg-[#faf7f4]"
+                                >
+                                    <FiPackage size={16} /> Đơn hàng của tôi
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab('address')}

@@ -35,6 +35,7 @@ import WishlistPage from './pages/Wishlist/WishlistPage';
 import ProfilePage from './pages/Profile/ProfilePage';
 import OrdersPage from './pages/Orders/OrdersPage';
 import OrderDetailPage from './pages/Orders/OrderDetailPage';
+import OrderTrackPage from './pages/Orders/OrderTrackPage';
 
 // ── Admin Pages ──
 import AdminDashboard from './pages/Admin/AdminDashboard';
@@ -96,13 +97,14 @@ export default function App() {
               {/* Cart (public, không cần login) */}
               <Route path="cart" element={<CartPage />} />
               <Route path="wishlist" element={<WishlistPage />} />
+              <Route path="track/:trackingToken" element={<OrderTrackPage />} />
 
               {/* Protected – phải đăng nhập */}
               <Route element={<ProtectedRoute />}>
                 <Route path="checkout" element={<CheckoutPage />} />
                 <Route path="profile" element={<ProfilePage />} />
                 <Route path="orders" element={<OrdersPage />} />
-                <Route path="orders/:id" element={<OrderDetailPage />} />
+                <Route path="orders/:orderCode" element={<OrderDetailPage />} />
               </Route>
             </Route>
 
