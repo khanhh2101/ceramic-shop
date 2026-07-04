@@ -40,13 +40,14 @@ export default function Home() {
         {
             image: 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=2000&auto=format&fit=crop',
             title: 'Nghệ Thuật Mộc Mạc',
-            subtitle: 'Tôn vinh vẻ đẹp nguyên bản và kỹ thuật vuốt tay truyền thống.',
+            subtitle:
+                'Tôn vinh vẻ đẹp nguyên bản và kỹ thuật vuốt tay truyền thống.',
         },
         {
             image: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?q=80&w=2000&auto=format&fit=crop',
             title: 'Không Gian Sống',
             subtitle: 'Tạo điểm nhấn bình yên cho ngôi nhà của bạn.',
-        }
+        },
     ];
 
     const testimonials = [
@@ -76,58 +77,72 @@ export default function Home() {
             api.get('/categories'),
             api.get('/products/bestsellers', { params: { count: 8 } }),
             api.get('/products', { params: { limit: 8, sort: 'newest' } }), // Lấy sp mới
-            api.get('/settings/home') // Lấy Home Content
-        ]).then(([catRes, bestRes, newRes, homeRes]) => {
-            setCategories(catRes.data.data || []);
-            setBestSellers(bestRes.data.data || []);
-            setNewProducts(newRes.data.data || bestRes.data.data?.slice(0,4) || []); // fallback nếu ko có sp mới
-            
-            // Xử lý home contents
-            const blocks = homeRes.data.data || [];
-            const blockMap = {};
-            blocks.forEach(b => {
-                try {
-                    blockMap[b.blockKey] = {
-                        ...b,
-                        data: JSON.parse(b.dataJson)
-                    };
-                } catch (e) {
-                    blockMap[b.blockKey] = { ...b, data: {} };
-                }
-            });
-            setHomeBlocks(blockMap);
-        }).catch(err => console.error(err))
-          .finally(() => setLoading(false));
+            api.get('/settings/home'), // Lấy Home Content
+        ])
+            .then(([catRes, bestRes, newRes, homeRes]) => {
+                setCategories(catRes.data.data || []);
+                setBestSellers(bestRes.data.data || []);
+                setNewProducts(
+                    newRes.data.data || bestRes.data.data?.slice(0, 4) || [],
+                ); // fallback nếu ko có sp mới
+
+                // Xử lý home contents
+                const blocks = homeRes.data.data || [];
+                const blockMap = {};
+                blocks.forEach((b) => {
+                    try {
+                        blockMap[b.blockKey] = {
+                            ...b,
+                            data: JSON.parse(b.dataJson),
+                        };
+                    } catch (e) {
+                        blockMap[b.blockKey] = { ...b, data: {} };
+                    }
+                });
+                setHomeBlocks(blockMap);
+            })
+            .catch((err) => console.error(err))
+            .finally(() => setLoading(false));
     }, []);
 
     // ── Xử lý dữ liệu động cho Hero Slider ──
     const heroData = homeBlocks['hero']?.data || {};
     let dynamicHeroSlides = heroData.slides || [];
-    
+
     // Fallback if there are no slides or using old format
     if (!dynamicHeroSlides.length) {
         dynamicHeroSlides = [
             {
                 image: heroData.image1 || '/assets/image/home/home.png',
                 title: heroData.title1 || 'Hơi Thở Của Đất',
-                subtitle: heroData.subtitle1 || 'Khám phá sự tinh tế trong từng đường nét gốm thủ công.',
+                subtitle:
+                    heroData.subtitle1 ||
+                    'Khám phá sự tinh tế trong từng đường nét gốm thủ công.',
                 buttonText: heroData.buttonText1 || 'Khám phá ngay',
                 buttonLink: heroData.buttonLink1 || '/shop',
             },
             {
-                image: heroData.image2 || 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=2000&auto=format&fit=crop',
+                image:
+                    heroData.image2 ||
+                    'https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=2000&auto=format&fit=crop',
                 title: heroData.title2 || 'Nghệ Thuật Mộc Mạc',
-                subtitle: heroData.subtitle2 || 'Tôn vinh vẻ đẹp nguyên bản và kỹ thuật vuốt tay truyền thống.',
+                subtitle:
+                    heroData.subtitle2 ||
+                    'Tôn vinh vẻ đẹp nguyên bản và kỹ thuật vuốt tay truyền thống.',
                 buttonText: heroData.buttonText2 || 'Khám phá ngay',
                 buttonLink: heroData.buttonLink2 || '/shop',
             },
             {
-                image: heroData.image3 || 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?q=80&w=2000&auto=format&fit=crop',
+                image:
+                    heroData.image3 ||
+                    'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?q=80&w=2000&auto=format&fit=crop',
                 title: heroData.title3 || 'Không Gian Sống',
-                subtitle: heroData.subtitle3 || 'Tạo điểm nhấn bình yên cho ngôi nhà của bạn.',
+                subtitle:
+                    heroData.subtitle3 ||
+                    'Tạo điểm nhấn bình yên cho ngôi nhà của bạn.',
                 buttonText: heroData.buttonText3 || 'Khám phá ngay',
                 buttonLink: heroData.buttonLink3 || '/shop',
-            }
+            },
         ];
     }
 
@@ -140,16 +155,24 @@ export default function Home() {
         if (isAuth) {
             dispatch(addToCartServer({ productId: product.id, quantity: 1 }));
         } else {
-            dispatch(addToGuestCart({ productId: product.id, quantity: 1, product }));
+            dispatch(
+                addToGuestCart({ productId: product.id, quantity: 1, product }),
+            );
         }
         toast.success('Đã thêm vào giỏ hàng!');
     };
 
     const renderProductCard = (prod) => (
-        <div key={prod.id} className="cursor-pointer group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all border border-[#eee] overflow-hidden flex flex-col h-full" onClick={() => navigate(`/product/${prod.slug || prod.id}`)}>
+        <div
+            key={prod.id}
+            className="cursor-pointer group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all border border-[#eee] overflow-hidden flex flex-col h-full"
+            onClick={() => navigate(`/product/${prod.slug || prod.id}`)}
+        >
             <div className="relative overflow-hidden h-[220px] bg-[#fcf9f5]">
                 <img
-                    src={prod.primaryImageUrl || '/assets/image/placeholder.jpg'}
+                    src={
+                        prod.primaryImageUrl || '/assets/image/placeholder.jpg'
+                    }
                     alt={prod.name}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 mix-blend-multiply"
                 />
@@ -160,15 +183,21 @@ export default function Home() {
                 )}
             </div>
             <div className="p-5 flex-1 flex flex-col">
-                <p className="text-[10px] text-[#888] mb-1.5 uppercase tracking-[2px] font-bold">{prod.categoryName}</p>
+                <p className="text-[10px] text-[#888] mb-1.5 uppercase tracking-[2px] font-bold">
+                    {prod.categoryName}
+                </p>
                 <h3 className="text-[16px] text-[#1a1a1a] font-display font-medium leading-[1.3] mb-3 group-hover:text-[#b5624a] transition-colors line-clamp-2">
                     {prod.name}
                 </h3>
                 <div className="mt-auto flex items-center justify-between">
                     <div>
-                        <p className="text-[16px] text-[#1a1a1a] font-bold">{prod.price?.toLocaleString('vi-VN')} ₫</p>
+                        <p className="text-[16px] text-[#1a1a1a] font-bold">
+                            {prod.price?.toLocaleString('vi-VN')} ₫
+                        </p>
                         {prod.oldPrice > 0 && (
-                            <p className="text-[12px] text-[#aaa] line-through">{prod.oldPrice?.toLocaleString('vi-VN')} ₫</p>
+                            <p className="text-[12px] text-[#aaa] line-through">
+                                {prod.oldPrice?.toLocaleString('vi-VN')} ₫
+                            </p>
                         )}
                     </div>
                     <button
@@ -186,7 +215,7 @@ export default function Home() {
     return (
         <div className="bg-[#faf7f4] min-h-screen">
             {/* ── HERO SLIDER (3 Images, Effect Fade, Autoplay) ── */}
-            <div className="w-full h-[70vh] min-h-[500px]">
+            <div className="w-full h-[70vh] min-h-[600px]">
                 <Swiper
                     modules={[Pagination, Autoplay, EffectFade]}
                     effect="fade"
@@ -211,10 +240,14 @@ export default function Home() {
                                     <p className="text-[15px] md:text-[18px] text-white/90 mb-10 leading-[1.6] max-w-xl mx-auto font-light">
                                         {slide.subtitle}
                                     </p>
-                                    <button 
+                                    <button
                                         className="bg-[#b5624a] text-white border-none py-3.5 px-10 text-[13px] font-bold tracking-[2px] uppercase rounded-full 
                                                    cursor-pointer transition-all duration-300 hover:bg-white hover:text-[#b5624a] shadow-lg hover:shadow-xl hover:-translate-y-1"
-                                        onClick={() => navigate(slide.buttonLink || '/shop')}
+                                        onClick={() =>
+                                            navigate(
+                                                slide.buttonLink || '/shop',
+                                            )
+                                        }
                                     >
                                         {slide.buttonText || 'Khám phá ngay'}
                                     </button>
@@ -229,15 +262,25 @@ export default function Home() {
             <div className="py-24 px-5 md:px-12 lg:px-20 bg-white">
                 <div className="flex items-end justify-between mb-12">
                     <div>
-                        <span className="text-[#b5624a] text-[11px] font-bold uppercase tracking-[3px] block mb-2">Gốm Nâu</span>
-                        <h2 className="text-[32px] md:text-[42px] font-display text-[#1a1a1a] leading-none">Danh Mục Sản Phẩm</h2>
+                        <span className="text-[#b5624a] text-[11px] font-display font-bold uppercase tracking-[3px] block mb-2">
+                            Champa Clay
+                        </span>
+                        <h2 className="text-[32px] md:text-[42px] font-display text-[#1a1a1a] leading-none">
+                            Danh Mục Sản Phẩm
+                        </h2>
                     </div>
                     {/* Custom Nav Buttons */}
                     <div className="hidden md:flex gap-3">
-                        <button ref={prevRef} className="w-10 h-10 rounded-full border border-[#ddd] flex items-center justify-center text-[#555] hover:bg-[#b5624a] hover:text-white hover:border-[#b5624a] transition-all">
+                        <button
+                            ref={prevRef}
+                            className="w-10 h-10 rounded-full border border-[#ddd] flex items-center justify-center text-[#555] hover:bg-[#b5624a] hover:text-white hover:border-[#b5624a] transition-all"
+                        >
                             <FiChevronLeft size={20} />
                         </button>
-                        <button ref={nextRef} className="w-10 h-10 rounded-full border border-[#ddd] flex items-center justify-center text-[#555] hover:bg-[#b5624a] hover:text-white hover:border-[#b5624a] transition-all">
+                        <button
+                            ref={nextRef}
+                            className="w-10 h-10 rounded-full border border-[#ddd] flex items-center justify-center text-[#555] hover:bg-[#b5624a] hover:text-white hover:border-[#b5624a] transition-all"
+                        >
                             <FiChevronRight size={20} />
                         </button>
                     </div>
@@ -265,26 +308,57 @@ export default function Home() {
                     }}
                     className="w-full pb-5"
                 >
-                    {(categories.length === 0 ? [
-                        { image: '/assets/image/home/categories1.jpg', name: 'Bình hoa gốm' },
-                        { image: '/assets/image/home/categories2.jpg', name: 'Chậu trồng cây' },
-                        { image: '/assets/image/home/categories3.jpg', name: 'Gạch men' },
-                        { image: '/assets/image/home/categories4.jpg', name: 'Trang trí nhà cửa' },
-                        { image: '/assets/image/home/categories5.jpg', name: 'Đồ dùng nhà bếp' },
-                    ] : categories).map((cat, idx) => (
+                    {(categories.length === 0
+                        ? [
+                              {
+                                  image: '/assets/image/home/categories1.jpg',
+                                  name: 'Bình hoa gốm',
+                              },
+                              {
+                                  image: '/assets/image/home/categories2.jpg',
+                                  name: 'Chậu trồng cây',
+                              },
+                              {
+                                  image: '/assets/image/home/categories3.jpg',
+                                  name: 'Gạch men',
+                              },
+                              {
+                                  image: '/assets/image/home/categories4.jpg',
+                                  name: 'Trang trí nhà cửa',
+                              },
+                              {
+                                  image: '/assets/image/home/categories5.jpg',
+                                  name: 'Đồ dùng nhà bếp',
+                              },
+                          ]
+                        : categories
+                    ).map((cat, idx) => (
                         <SwiperSlide key={cat.id || idx}>
-                            <div className="cursor-pointer group block" onClick={() => navigate(`/shop?categoryId=${cat.id || ''}`)}>
+                            <div
+                                className="cursor-pointer group block"
+                                onClick={() =>
+                                    navigate(`/shop?categoryId=${cat.id || ''}`)
+                                }
+                            >
                                 <div className="bg-[#fcf9f5] rounded-2xl overflow-hidden mb-4 h-[240px] md:h-[280px] shadow-sm relative">
                                     <img
-                                        src={cat.imageUrl || cat.image || '/assets/image/home/categories1.jpg'}
+                                        src={
+                                            cat.imageUrl ||
+                                            cat.image ||
+                                            '/assets/image/home/categories1.jpg'
+                                        }
                                         alt={cat.name}
                                         className="w-full h-full object-cover mix-blend-multiply transition-transform duration-700 group-hover:scale-110"
                                     />
                                     <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500"></div>
                                 </div>
-                                <h3 className="text-[16px] text-[#1a1a1a] font-display font-medium text-center group-hover:text-[#b5624a] transition-colors">{cat.name}</h3>
+                                <h3 className="text-[16px] text-[#1a1a1a] font-display font-medium text-center group-hover:text-[#b5624a] transition-colors">
+                                    {cat.name}
+                                </h3>
                                 {(cat.productCount || 0) > 0 && (
-                                    <p className="text-center text-[12px] text-[#888] font-light mt-1">{cat.productCount} sản phẩm</p>
+                                    <p className="text-center text-[12px] text-[#888] font-light mt-1">
+                                        {cat.productCount} sản phẩm
+                                    </p>
                                 )}
                             </div>
                         </SwiperSlide>
@@ -295,22 +369,34 @@ export default function Home() {
             {/* ── SẢN PHẨM MỚI ── */}
             <div className="py-24 px-5 md:px-12 lg:px-20 bg-[#faf7f4]">
                 <div className="text-center mb-16">
-                    <span className="text-[#b5624a] text-[11px] font-bold uppercase tracking-[3px] block mb-2">Bộ Sưu Tập 2024</span>
-                    <h2 className="text-[36px] md:text-[46px] font-display text-[#1a1a1a] leading-none">Sản Phẩm Mới</h2>
+                    <span className="text-[#b5624a] text-[11px] font-displayfont-bold uppercase tracking-[3px] block mb-2">
+                        Bộ Sưu Tập 2024
+                    </span>
+                    <h2 className="text-[36px] md:text-[46px] font-display text-[#1a1a1a] leading-none">
+                        Sản Phẩm Mới
+                    </h2>
                 </div>
-                
+
                 {loading ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        {Array.from({length: 4}).map((_,i) => <div key={i} className="h-[300px] bg-[#eee] animate-pulse rounded-xl"></div>)}
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <div
+                                key={i}
+                                className="h-[300px] bg-[#eee] animate-pulse rounded-xl"
+                            ></div>
+                        ))}
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {newProducts.slice(0, 8).map(renderProductCard)}
                     </div>
                 )}
-                
+
                 <div className="text-center mt-12">
-                    <button onClick={() => navigate('/shop')} className="inline-block border-b-2 border-[#1a1a1a] text-[#1a1a1a] pb-1 text-[13px] font-bold uppercase tracking-[2px] hover:text-[#b5624a] hover:border-[#b5624a] transition-colors">
+                    <button
+                        onClick={() => navigate('/shop')}
+                        className="inline-block border-b-2 border-[#1a1a1a] text-[#1a1a1a] pb-1 text-[13px] font-display font-bold uppercase tracking-[2px] hover:text-[#b5624a] hover:border-[#b5624a] transition-colors"
+                    >
                         Xem Tất Cả Đồ Mới
                     </button>
                 </div>
@@ -322,10 +408,13 @@ export default function Home() {
                     <div className="grid grid-cols-1 lg:grid-cols-2">
                         {/* Ảnh bên trái */}
                         <div className="relative h-[400px] lg:h-[600px] overflow-hidden group">
-                            <img 
-                                src={promoData.image || "https://images.unsplash.com/photo-1600573472591-ee6981cf35b6?q=80&w=1200&auto=format&fit=crop"} 
-                                alt="Khuyến mãi" 
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[10s]" 
+                            <img
+                                src={
+                                    promoData.image ||
+                                    'https://images.unsplash.com/photo-1600573472591-ee6981cf35b6?q=80&w=1200&auto=format&fit=crop'
+                                }
+                                alt="Khuyến mãi"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[10s]"
                             />
                         </div>
                         {/* Content bên phải */}
@@ -334,14 +423,26 @@ export default function Home() {
                             <span className="text-[#b5624a] text-[12px] font-bold uppercase tracking-[4px] mb-4 relative z-10">
                                 {promoData.tag || 'Ưu Đãi Đặc Biệt'}
                             </span>
-                            <h2 className="text-[42px] md:text-[56px] font-display leading-[1.1] mb-6 relative z-10 text-[#1a1a1a]" dangerouslySetInnerHTML={{ __html: promoData.title?.replace('\n', '<br/>') || 'Khơi Nguồn <br/> <span className="italic text-[#8a3e2a]">Sự Tĩnh Lặng</span>' }}>
-                            </h2>
+                            <h2
+                                className="text-[42px] md:text-[56px] font-display leading-[1.1] mb-6 relative z-10 text-[#1a1a1a]"
+                                dangerouslySetInnerHTML={{
+                                    __html:
+                                        promoData.title?.replace(
+                                            '\n',
+                                            '<br/>',
+                                        ) ||
+                                        'Khơi Nguồn <br/> <span className="italic text-[#8a3e2a]">Sự Tĩnh Lặng</span>',
+                                }}
+                            ></h2>
                             <p className="text-[#555] text-[16px] leading-[1.8] mb-10 max-w-md font-light relative z-10">
-                                {promoData.description || 'Giảm đến 40% cho toàn bộ sưu tập chậu trồng cây và đồ trang trí. Mang thiên nhiên vào nhà với phong cách tối giản mộc mạc nhất.'}
+                                {promoData.description ||
+                                    'Giảm đến 40% cho toàn bộ sưu tập chậu trồng cây và đồ trang trí. Mang thiên nhiên vào nhà với phong cách tối giản mộc mạc nhất.'}
                             </p>
-                            <button 
+                            <button
                                 className="bg-[#1a1a1a] hover:bg-[#b5624a] text-white py-4 px-10 text-[13px] font-bold uppercase tracking-[2px] rounded-full transition-all duration-300 w-fit relative z-10"
-                                onClick={() => navigate(promoData.buttonLink || '/shop')}
+                                onClick={() =>
+                                    navigate(promoData.buttonLink || '/shop')
+                                }
                             >
                                 {promoData.buttonText || 'Khám phá ưu đãi'}
                             </button>
@@ -353,13 +454,22 @@ export default function Home() {
             {/* ── SẢN PHẨM NỔI BẬT (Featured Products) ── */}
             <div className="py-24 px-5 md:px-12 lg:px-20 bg-white">
                 <div className="text-center mb-16">
-                    <span className="text-[#b5624a] text-[11px] font-bold uppercase tracking-[3px] block mb-2">Được Yêu Thích Nhất</span>
-                    <h2 className="text-[36px] md:text-[46px] font-display text-[#1a1a1a] leading-none">Sản Phẩm Nổi Bật</h2>
+                    <span className="text-[#b5624a] text-[11px] font-display font-bold uppercase tracking-[3px] block mb-2">
+                        Được Yêu Thích Nhất
+                    </span>
+                    <h2 className="text-[36px] md:text-[46px] font-display text-[#1a1a1a] leading-none">
+                        Sản Phẩm Nổi Bật
+                    </h2>
                 </div>
-                
+
                 {loading ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        {Array.from({length: 4}).map((_,i) => <div key={i} className="h-[300px] bg-[#eee] animate-pulse rounded-xl"></div>)}
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <div
+                                key={i}
+                                className="h-[300px] bg-[#eee] animate-pulse rounded-xl"
+                            ></div>
+                        ))}
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -370,7 +480,9 @@ export default function Home() {
 
             {/* ── REDESIGNED TESTIMONIALS (Slider) ── */}
             <div className="py-24 px-5 md:px-12 lg:px-20 bg-[#faf7f4] text-center border-t border-[#eee]">
-                <h2 className="mb-14 text-[28px] md:text-[36px] font-display text-[#1a1a1a]">Khách Hàng Nói Gì?</h2>
+                <h2 className="mb-14 text-[28px] md:text-[36px] font-display text-[#1a1a1a]">
+                    Khách Hàng Nói Gì?
+                </h2>
                 <div className="max-w-[900px] mx-auto">
                     <Swiper
                         modules={[Pagination, Autoplay]}
@@ -384,15 +496,30 @@ export default function Home() {
                             <SwiperSlide key={index}>
                                 <div className="bg-white p-10 md:p-14 rounded-3xl shadow-sm mx-2">
                                     <div className="flex justify-center mb-6 text-[#b5624a]">
-                                        {[1,2,3,4,5].map(star => <FiStar key={star} fill="currentColor" size={20} className="mx-1" />)}
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <FiStar
+                                                key={star}
+                                                fill="currentColor"
+                                                size={20}
+                                                className="mx-1"
+                                            />
+                                        ))}
                                     </div>
                                     <p className="text-[18px] md:text-[22px] text-[#444] leading-[1.8] mb-10 font-display italic">
                                         "{t.text}"
                                     </p>
                                     <div className="flex flex-col items-center">
-                                        <img src={t.avatar} alt={t.name} className="w-16 h-16 rounded-full object-cover mb-4 border-2 border-[#eee8df]" />
-                                        <h4 className="text-[16px] text-[#1a1a1a] font-bold uppercase tracking-[1px] mb-1">{t.name}</h4>
-                                        <p className="text-[13px] text-[#b5624a] font-light">{t.role}</p>
+                                        <img
+                                            src={t.avatar}
+                                            alt={t.name}
+                                            className="w-16 h-16 rounded-full object-cover mb-4 border-2 border-[#eee8df]"
+                                        />
+                                        <h4 className="text-[16px] text-[#1a1a1a] font-bold uppercase tracking-[1px] mb-1">
+                                            {t.name}
+                                        </h4>
+                                        <p className="text-[13px] text-[#b5624a] font-light">
+                                            {t.role}
+                                        </p>
                                     </div>
                                 </div>
                             </SwiperSlide>
