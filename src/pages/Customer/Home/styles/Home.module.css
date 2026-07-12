@@ -1,0 +1,9 @@
+/* 
+  Styles specific to the Home page.
+  Note: Use Tailwind CSS for 90% of styling. 
+  Only use this file for complex CSS that Tailwind cannot easily handle (e.g. complex grid layouts, custom keyframe animations, third-party library overrides).
+*/
+
+.heroSection {
+    /* Example custom class */
+}

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FiImage, FiCopy, FiTrash2, FiSearch, FiFilter, FiUpload, FiRefreshCw } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import api from '../../../services/api';
-import { mediaService } from '../../../services/index';
+import { adminMediaApi } from './api/adminMediaApi';
+import MediaPreviewModal from './components/MediaPreviewModal';
 
 export default function AdminMedia() {
   const [files, setFiles] = useState([]);
@@ -19,13 +19,10 @@ export default function AdminMedia() {
   const fetchMedia = async (page = 1, bucket = '', search = '', sort = 'newest') => {
     try {
       setLoading(true);
-      const res = await api.get('/media', {
-        params: { page, pageSize: 24, bucket, search, sort }
-      });
-      if (res.data) {
-        // PagedResponse
-        setFiles(res.data.data || []);
-        setTotalPages(Math.ceil((res.data.totalCount || 0) / (res.data.pageSize || 24)));
+      const res = await adminMediaApi.getMedia({ page, pageSize: 24, bucket, search, sort });
+      if (res) {
+        setFiles(Array.isArray(res) ? res : (res?.data || res?.items || []));
+        setTotalPages(Math.ceil((res.totalCount || 0) / (res.pageSize || 24)));
       }
     } catch (err) {
       toast.error('Lỗi khi tải danh sách Media');
@@ -36,7 +33,6 @@ export default function AdminMedia() {
   };
 
   useEffect(() => {
-    // Add debounce for search
     const timer = setTimeout(() => {
       fetchMedia(currentPage, bucketFilter, searchTerm, sortOrder);
     }, 500);
@@ -47,7 +43,7 @@ export default function AdminMedia() {
     if (!window.confirm('Bạn có chắc chắn muốn xoá file này? File sẽ bị xoá khỏi hệ thống và không thể phục hồi.')) return;
     
     try {
-      await api.delete(`/media/${id}`);
+      await adminMediaApi.deleteMedia(id);
       toast.success('Xoá file thành công!');
       fetchMedia(currentPage, bucketFilter, searchTerm, sortOrder);
     } catch (err) {
@@ -96,7 +92,6 @@ export default function AdminMedia() {
     const uploadedFiles = Array.from(e.target.files || []);
     if (!uploadedFiles.length) return;
 
-    // Validate
     const invalidFile = uploadedFiles.find(f => !f.type.startsWith('image/') || f.size > 5 * 1024 * 1024);
     if (invalidFile) {
       toast.error('Chỉ hỗ trợ file hình ảnh và kích thước dưới 5MB');
@@ -106,7 +101,7 @@ export default function AdminMedia() {
     try {
       setUploading(true);
       const targetBucket = bucketFilter.replace('ecommerce-', '') || 'general';
-      await mediaService.uploadMultiple(uploadedFiles, targetBucket);
+      await adminMediaApi.uploadMultiple(uploadedFiles, targetBucket);
       toast.success('Upload ảnh thành công!');
       fetchMedia(1, bucketFilter, searchTerm, sortOrder);
       setCurrentPage(1);
@@ -115,7 +110,7 @@ export default function AdminMedia() {
       console.error(err);
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = ''; // Reset input
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -145,7 +140,6 @@ export default function AdminMedia() {
 
   return (
     <div className="space-y-6">
-      {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 font-display">Thư Viện Media</h1>
@@ -153,7 +147,6 @@ export default function AdminMedia() {
         </div>
         
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          {/* Search */}
           <div className="relative flex-1 sm:w-48">
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -165,7 +158,6 @@ export default function AdminMedia() {
             />
           </div>
 
-          {/* Sort */}
           <div className="relative w-full sm:w-36">
             <select
               value={sortOrder}
@@ -179,7 +171,6 @@ export default function AdminMedia() {
             </select>
           </div>
 
-          {/* Filter */}
           <div className="relative flex-1 sm:w-48">
             <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <select
@@ -228,7 +219,6 @@ export default function AdminMedia() {
         </div>
       </div>
 
-      {/* ── Grid ── */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-[60vh]">
         {loading ? (
           <div className="flex justify-center items-center h-64">
@@ -244,7 +234,6 @@ export default function AdminMedia() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {files.map(file => (
                 <div key={file.id} className="group relative bg-gray-50 rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                  {/* Image Thumbnail */}
                   <div className="aspect-square bg-gray-200 relative overflow-hidden cursor-pointer" onClick={() => setPreviewFile(file)}>
                     <img 
                       src={file.url} 
@@ -252,7 +241,6 @@ export default function AdminMedia() {
                       className="w-full h-full object-cover"
                       loading="lazy"
                     />
-                    {/* Hover actions */}
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <button 
                         onClick={() => copyToClipboard(file.url)}
@@ -277,13 +265,10 @@ export default function AdminMedia() {
                       </button>
                     </div>
                   </div>
-                  {/* File Info */}
                   <div className="p-3">
                     <p className="text-xs font-medium text-gray-800 truncate mb-2" title={file.fileName}>
                       {file.fileName}
                     </p>
-                    
-                    {/* Extra Info */}
                     <div className="flex flex-col gap-1.5 mb-1">
                       <div className="flex items-center justify-between">
                         <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full ${getBucketLabel(file.bucket || '').color}`}>
@@ -302,7 +287,6 @@ export default function AdminMedia() {
               ))}
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex justify-center mt-8 gap-2">
                 {[...Array(totalPages)].map((_, i) => (
@@ -324,25 +308,12 @@ export default function AdminMedia() {
         )}
       </div>
 
-      {/* ── Lightbox Preview Modal ── */}
-      {previewFile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setPreviewFile(null)}>
-          <div className="relative max-w-5xl w-full flex flex-col items-center gap-4" onClick={(e) => e.stopPropagation()}>
-            <button 
-              className="absolute -top-10 right-0 text-white hover:text-gray-300"
-              onClick={() => setPreviewFile(null)}
-            >
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-            <img src={previewFile.url} alt={previewFile.fileName} className="max-h-[80vh] object-contain rounded shadow-2xl" />
-            <div className="bg-white/10 backdrop-blur text-white px-4 py-2 rounded flex gap-4 text-sm">
-              <p><strong>Tên:</strong> {previewFile.fileName}</p>
-              <p><strong>Kích thước:</strong> {formatFileSize(previewFile.fileSize)}</p>
-              <p><strong>Phân loại:</strong> {getBucketLabel(previewFile.bucket || '').text}</p>
-            </div>
-          </div>
-        </div>
-      )}
+      <MediaPreviewModal 
+        previewFile={previewFile}
+        setPreviewFile={setPreviewFile}
+        formatFileSize={formatFileSize}
+        getBucketLabel={getBucketLabel}
+      />
     </div>
   );
 }

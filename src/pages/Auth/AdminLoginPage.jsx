@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { adminLogin, selectAuthLoading, selectAuthError, selectIsAuthenticated, selectIsAdmin, clearError } from '../../store/slices/authSlice';
+import { adminLogin, selectAuthLoading, selectAuthError, selectIsAuthenticated, selectIsAdmin, clearError } from '@/store/slices/authSlice';
 import { FiMail, FiLock, FiShield } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 

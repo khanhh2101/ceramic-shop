@@ -1,11 +1,12 @@
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { ReactSVG } from 'react-svg';
 import { useTranslation } from 'react-i18next';
-import { selectIsAuthenticated, selectUser, selectIsAdmin, logout } from '../../../../store/slices/authSlice';
-import { selectCartCount } from '../../../../store/slices/cartSlice';
+import { selectIsAuthenticated, selectUser, selectIsAdmin, logout } from '@/store/slices/authSlice';
+import { selectCartCount } from '@/store/slices/cartSlice';
 import toast from 'react-hot-toast';
-import { FiGlobe, FiUser, FiSettings, FiLogOut, FiLogIn } from 'react-icons/fi';
+import { FiGlobe, FiUser, FiSettings, FiLogOut, FiLogIn, FiX } from 'react-icons/fi';
 
 // ── Header Component ──────────────────────────────────────────────────────────
 // Giữ đúng thiết kế gốc: logo SVG + GỐM NÂU, nav links uppercase,
@@ -22,8 +23,20 @@ function Header({ onCartClick }) {
     const isAdmin = useSelector(selectIsAdmin);
     const cartCount = useSelector(selectCartCount);
 
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+
     const toggleSearch = () => {
-        navigate('/shop?search=');
+        setIsSearchOpen(!isSearchOpen);
+    };
+
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+            setIsSearchOpen(false);
+            setSearchQuery('');
+        }
     };
 
     const handleLogout = () => {
@@ -83,18 +96,34 @@ function Header({ onCartClick }) {
             {/* ── Right: Actions (Search, Wishlist, Cart, User/Admin) ── */}
             <div className="flex gap-5 items-center">
                 {/* Search */}
-                <button
-                    onClick={toggleSearch}
-                    title="Tìm kiếm"
-                    className="bg-transparent border-none cursor-pointer text-gray-500
-                               hover:text-[#5c3a21] transition-colors duration-300 relative"
-                >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" strokeWidth="1.5">
-                        <circle cx="11" cy="11" r="8" />
-                        <path d="m21 21-4.35-4.35" />
-                    </svg>
-                </button>
+                <div className="flex items-center">
+                    {isSearchOpen && (
+                        <form onSubmit={handleSearchSubmit} className="mr-3 animate-fade-in-up">
+                            <input
+                                type="text"
+                                autoFocus
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Tìm sản phẩm..."
+                                className="w-[160px] text-[13px] border-b border-gray-300 pb-1 focus:outline-none focus:border-[#5c3a21] bg-transparent text-[#1a1a1a]"
+                            />
+                        </form>
+                    )}
+                    <button
+                        onClick={toggleSearch}
+                        title="Tìm kiếm"
+                        className="bg-transparent border-none cursor-pointer text-gray-500
+                                   hover:text-[#5c3a21] transition-colors duration-300 relative"
+                    >
+                        {isSearchOpen ? <FiX size={18} /> : (
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" strokeWidth="1.5">
+                                <circle cx="11" cy="11" r="8" />
+                                <path d="m21 21-4.35-4.35" />
+                            </svg>
+                        )}
+                    </button>
+                </div>
 
                 {/* Wishlist */}
                 <button

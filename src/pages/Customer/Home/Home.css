@@ -1,0 +1,22 @@
+/* Global styles for Swiper overrides on Home page */
+.hero-swiper .swiper-pagination-bullet {
+    background: white;
+    opacity: 0.5;
+    width: 10px;
+    height: 10px;
+}
+.hero-swiper .swiper-pagination-bullet-active {
+    opacity: 1;
+    background: #b5624a;
+    width: 24px;
+    border-radius: 5px;
+}
+.testimonial-swiper .swiper-pagination-bullet {
+    background: #ccc;
+    opacity: 1;
+}
+.testimonial-swiper .swiper-pagination-bullet-active {
+    background: #b5624a;
+    width: 20px;
+    border-radius: 5px;
+}

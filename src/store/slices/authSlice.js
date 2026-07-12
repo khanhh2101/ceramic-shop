@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
+import { getErrorMessage } from '@/utils';
 
 // ── Auth Slice ────────────────────────────────────────────────────────────────
 // Quản lý toàn bộ trạng thái xác thực:
@@ -14,9 +15,9 @@ export const register = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const res = await api.post('/auth/register', data);
-      return res.data.data; // { accessToken, refreshToken, user }
+      return res?.data || res; // { accessToken, refreshToken, user }
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Đăng ký thất bại.');
+      return rejectWithValue(getErrorMessage(err, 'Đăng ký thất bại.'));
     }
   }
 );
@@ -26,9 +27,9 @@ export const login = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const res = await api.post('/auth/login', data);
-      return res.data.data;
+      return res?.data || res;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Đăng nhập thất bại.');
+      return rejectWithValue(getErrorMessage(err, 'Đăng nhập thất bại.'));
     }
   }
 );
@@ -38,9 +39,9 @@ export const adminLogin = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const res = await api.post('/auth/admin-login', data);
-      return res.data.data;
+      return res?.data || res;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Đăng nhập thất bại.');
+      return rejectWithValue(getErrorMessage(err, 'Đăng nhập thất bại.'));
     }
   }
 );
@@ -50,9 +51,9 @@ export const googleLogin = createAsyncThunk(
   async (idToken, { rejectWithValue }) => {
     try {
       const res = await api.post('/auth/google', { idToken });
-      return res.data.data;
+      return res?.data || res;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Đăng nhập Google thất bại.');
+      return rejectWithValue(getErrorMessage(err, 'Đăng nhập Google thất bại.'));
     }
   }
 );
@@ -62,9 +63,9 @@ export const facebookLogin = createAsyncThunk(
   async (idToken, { rejectWithValue }) => {
     try {
       const res = await api.post('/auth/facebook', { idToken });
-      return res.data.data;
+      return res?.data || res;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Đăng nhập Facebook thất bại.');
+      return rejectWithValue(getErrorMessage(err, 'Đăng nhập Facebook thất bại.'));
     }
   }
 );
@@ -76,7 +77,7 @@ export const updateProfile = createAsyncThunk(
       await api.put('/users/me', data);
       return data; // Trả về data để update state
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Cập nhật thất bại.');
+      return rejectWithValue(getErrorMessage(err, 'Cập nhật thất bại.'));
     }
   }
 );

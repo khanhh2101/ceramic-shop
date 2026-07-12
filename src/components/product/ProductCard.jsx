@@ -1,11 +1,12 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { FiHeart, FiShoppingBag, FiStar } from 'react-icons/fi';
-import { addToGuestCart, addToCartServer } from '../../store/slices/cartSlice';
-import { toggleCartDrawer } from '../../store/slices/uiSlice';
-import { toggleWishlist, selectIsInWishlist } from '../../store/slices/wishlistSlice';
-import { selectIsAuthenticated } from '../../store/slices/authSlice';
+import { addToGuestCart, addToCartServer } from '@/store/slices/cartSlice';
+import { toggleCartDrawer } from '@/store/slices/uiSlice';
+import { toggleWishlist, selectIsInWishlist } from '@/store/slices/wishlistSlice';
+import { selectIsAuthenticated } from '@/store/slices/authSlice';
 import toast from 'react-hot-toast';
+import { formatCurrency } from '@/utils';
 
 // ── ProductCard Component ─────────────────────────────────────────────────────
 // Card hiển thị sản phẩm trong danh sách, dùng ở shop, home, bestsellers.
@@ -15,6 +16,7 @@ import toast from 'react-hot-toast';
 //              soldCount, inStock, isFreeShip, slug }
 
 export default function ProductCard({ product }) {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const isAuth = useSelector(selectIsAuthenticated);
   const isWishlisted = useSelector(selectIsInWishlist(product.id));
@@ -32,12 +34,21 @@ export default function ProductCard({ product }) {
       return;
     }
 
-    const defaultColor = product.colors?.length > 0 ? product.colors[0].name : null;
+    let selectedColor = null;
+    if (product.colors && product.colors.length > 0) {
+      if (product.colors.length === 1) {
+        selectedColor = product.colors[0].name;
+      } else {
+        // Yêu cầu chọn màu -> chuyển tới trang chi tiết
+        navigate(`/product/${product.slug || product.id}`);
+        return;
+      }
+    }
 
     if (isAuth) {
-      dispatch(addToCartServer({ productId: product.id, quantity: 1, color: defaultColor }));
+      dispatch(addToCartServer({ productId: product.id, quantity: 1, color: selectedColor }));
     } else {
-      dispatch(addToGuestCart({ productId: product.id, quantity: 1, color: defaultColor, product }));
+      dispatch(addToGuestCart({ productId: product.id, quantity: 1, color: selectedColor, product }));
     }
     dispatch(toggleCartDrawer());
     toast.success('Đã thêm vào giỏ hàng!', { icon: '🛍️' });
@@ -57,7 +68,7 @@ export default function ProductCard({ product }) {
       {/* ── Ảnh sản phẩm ── */}
       <div className="relative overflow-hidden bg-cream-100">
         <img
-          src={product.primaryImageUrl || '/placeholder-product.jpg'}
+          src={product.primaryImageUrl || 'https://placehold.co/600x800/eeeeee/999999?text=Gom+Nau'}
           alt={product.name}
           className="w-full aspect-product object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
@@ -114,10 +125,10 @@ export default function ProductCard({ product }) {
           <button
             onClick={handleAddToCart}
             disabled={!product.inStock}
-            className="w-full btn-primary py-2.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full btn-primary py-2.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <FiShoppingBag className="w-4 h-4" />
-            {product.inStock ? 'Thêm vào giỏ' : 'Hết hàng'}
+            {!product.inStock ? 'Hết hàng' : (product.colors && product.colors.length > 1 ? 'Tùy chọn màu' : 'Thêm vào giỏ')}
           </button>
         </div>
       </div>
@@ -143,11 +154,11 @@ export default function ProductCard({ product }) {
         {/* Giá */}
         <div className="flex items-center gap-2">
           <span className="font-bold text-primary-600">
-            {product.price?.toLocaleString('vi-VN')}₫
+            {formatCurrency(product.price)}
           </span>
           {product.oldPrice > product.price && (
             <span className="text-xs text-gray-400 line-through">
-              {product.oldPrice?.toLocaleString('vi-VN')}₫
+              {formatCurrency(product.oldPrice)}
             </span>
           )}
         </div>

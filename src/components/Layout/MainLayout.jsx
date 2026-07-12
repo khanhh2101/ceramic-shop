@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { selectCartItems } from '../../store/slices/cartSlice';
-import { selectIsAuthenticated } from '../../store/slices/authSlice';
-import { fetchCart } from '../../store/slices/cartSlice';
+import { selectCartItems } from '@/store/slices/cartSlice';
+import { selectIsAuthenticated } from '@/store/slices/authSlice';
+import { fetchCart } from '@/store/slices/cartSlice';
 import { FiArrowUp } from 'react-icons/fi';
 
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Newsletter from './components/Newsletter';
-import CartSidebar from '../../pages/CartSidebar';
-import { selectCartDrawerOpen, closeCartDrawer, toggleCartDrawer } from '../../store/slices/uiSlice';
+import CartSidebar from '@/pages/Customer/CartSidebar';
+import { selectCartDrawerOpen, closeCartDrawer, toggleCartDrawer } from '@/store/slices/uiSlice';
 
 // ── Main Layout ─── Header + Content + Newsletter + Footer
 export default function MainLayout() {
@@ -24,7 +24,8 @@ export default function MainLayout() {
   const cartItems = useSelector(selectCartItems);
   
   // Tính tổng tiền
-  const cartTotal = cartItems.reduce(
+  const validCartItems = Array.isArray(cartItems) ? cartItems : [];
+  const cartTotal = validCartItems.reduce(
       (total, item) => total + (item.price || item.product?.price || 0) * item.quantity,
       0
   );

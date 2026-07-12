@@ -10,7 +10,7 @@ export function useSiteSettings() {
         queryKey: ['siteSettings'],
         queryFn: async () => {
             const res = await api.get('/settings');
-            return res.data.data || {};
+            return res || {};
         },
         staleTime: 1000 * 60 * 5, // Cache 5 minutes
     });

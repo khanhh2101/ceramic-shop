@@ -13,47 +13,46 @@ import AdminLayout from './components/Layout/AdminLayout';
 import ProtectedRoute from './routes/ProtectedRoute';
 
 // ── Public Pages (dùng lại pages cũ + pages mới được cập nhật) ──
-import Home from './pages/Home/index';             // Trang chủ cũ
-import Shop from './pages/Shop/index';             // Trang shop cũ  
-import Details from './pages/Details/index';       // Chi tiết sản phẩm cũ
+import Home from './pages/Customer/Home/index';             // Trang chủ cũ
+import Shop from './pages/Customer/Shop/index';             // Trang shop cũ  
+import Details from './pages/Customer/Details/index';       // Chi tiết sản phẩm cũ
 
 // ── Pages mới (Tailwind + kết nối BE mới) ──
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
 import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage';
 import AdminLoginPage from './pages/Auth/AdminLoginPage';
-import BlogPage from './pages/Blog/BlogPage';
-import BlogDetailPage from './pages/Blog/BlogDetailPage';
-import AboutPage from './pages/About/AboutPage';
-import ContactPage from './pages/Contact/ContactPage';
-import SupportPage from './pages/Support/SupportPage';
+import BlogPage from './pages/Customer/Blog/BlogPage';
+import BlogDetailPage from './pages/Customer/Blog/BlogDetailPage';
+import AboutPage from './pages/Customer/About';
+import ContactPage from './pages/Customer/Contact';
+import SupportPage from './pages/Customer/Support';
 
 // ── Protected Pages ──
-import CartPage from './pages/Cart/CartPage';
-import CheckoutPage from './pages/Checkout/CheckoutPage';
-import WishlistPage from './pages/Wishlist/WishlistPage';
-import ProfilePage from './pages/Profile/ProfilePage';
-import OrdersPage from './pages/Orders/OrdersPage';
-import OrderDetailPage from './pages/Orders/OrderDetailPage';
-import OrderTrackPage from './pages/Orders/OrderTrackPage';
+import CartPage from './pages/Customer/Cart';
+import CheckoutPage from './pages/Customer/Checkout';
+import WishlistPage from './pages/Customer/Wishlist';
+import ProfilePage from './pages/Customer/Profile/index';
+import { OrdersPage, OrderDetailPage, OrderTrackPage } from './pages/Customer/Orders';
 
 // ── Admin Pages ──
-import AdminDashboard from './pages/Admin/AdminDashboard';
-import AdminProducts from './pages/Admin/Products/AdminProducts';
-import AdminOrders from './pages/Admin/Orders/AdminOrders';
+import AdminDashboard from './pages/Admin/Dashboard';
+import AdminProducts from './pages/Admin/Products';
+import AdminOrders from './pages/Admin/Orders';
 import AdminUsers from './pages/Admin/Users/AdminUsers';
-import AdminBlogs from './pages/Admin/Blogs/AdminBlogs';
-import AdminCategories from './pages/Admin/Categories/AdminCategories';
+import AdminBlogs from './pages/Admin/Blogs';
+import AdminCategories from './pages/Admin/Categories';
 import AdminCoupons from './pages/Admin/Coupons/AdminCoupons';
 import AdminReviews from './pages/Admin/Reviews/AdminReviews';
 
-import AdminSettings from './pages/Admin/Settings/AdminSettings';
-import AdminLocations from './pages/Admin/Settings/AdminLocations';
-import AdminMedia from './pages/Admin/Media/AdminMedia';
+import { AdminSettings, AdminLocations } from './pages/Admin/Settings';
+import AdminMedia from './pages/Admin/Media';
 import AdminMasterData from './pages/Admin/MasterData/AdminMasterData';
+import AdminInventory from './pages/Admin/Inventory/AdminInventory';
+import AdminPurchaseOrders from './pages/Admin/PurchaseOrders/AdminPurchaseOrders';
 
 // ── Not Found ──
-import NotFoundPage from './pages/NotFound/NotFoundPage';
+import NotFoundPage from './pages/Customer/NotFound';
 
 // React Query client – cache 5 phút
 const queryClient = new QueryClient({
@@ -133,6 +132,8 @@ export default function App() {
                 <Route path="master-data" element={<AdminMasterData />} />
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="locations" element={<AdminLocations />} />
+                <Route path="inventory" element={<AdminInventory />} />
+                <Route path="purchase-orders" element={<AdminPurchaseOrders />} />
               </Route>
             </Route>
 

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { FiFacebook, FiInstagram, FiYoutube, FiMail, FiPhone, FiMapPin } from 'react-icons/fi';
-import { useSiteSettings } from '../../hooks/useSiteSettings';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 // ── Footer Component ──────────────────────────────────────────────────────────
 export default function Footer() {

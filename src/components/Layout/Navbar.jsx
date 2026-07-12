@@ -2,10 +2,10 @@ import { useState, useCallback } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { FiShoppingBag, FiHeart, FiSearch, FiMenu, FiX, FiUser, FiLogOut, FiPackage, FiSettings } from 'react-icons/fi';
-import { selectIsAuthenticated, selectUser, selectIsAdmin, logout } from '../../store/slices/authSlice';
-import { selectCartCount } from '../../store/slices/cartSlice';
-import { toggleMobileMenu, selectMobileMenuOpen, closeMobileMenu } from '../../store/slices/uiSlice';
-import { useSiteSettings } from '../../hooks/useSiteSettings';
+import { selectIsAuthenticated, selectUser, selectIsAdmin, logout } from '@/store/slices/authSlice';
+import { selectCartCount } from '@/store/slices/cartSlice';
+import { toggleMobileMenu, selectMobileMenuOpen, closeMobileMenu } from '@/store/slices/uiSlice';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import toast from 'react-hot-toast';
 
 // ── Navbar Component ──────────────────────────────────────────────────────────

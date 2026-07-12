@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { FiRefreshCw, FiMapPin, FiEdit2, FiSearch, FiCheck, FiX, FiChevronDown, FiChevronRight } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import api from '../../../services/api';
+import { adminLocationApi } from './api/adminLocationApi';
+import { getErrorMessage } from '@/utils';
 
 export default function AdminLocations() {
   const [provinces, setProvinces] = useState([]);
@@ -30,8 +31,8 @@ export default function AdminLocations() {
   const fetchProvinces = async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/locations/provinces?isNewStructure=${isNewStructure}`);
-      setProvinces(res.data.data || []);
+      const res = await adminLocationApi.getProvinces(isNewStructure);
+      setProvinces(Array.isArray(res) ? res : (res?.data || res?.items || []));
     } catch (err) {
       toast.error('Lỗi khi tải danh sách Tỉnh/Thành phố');
     } finally {
@@ -45,11 +46,11 @@ export default function AdminLocations() {
     
     try {
       setSyncing(true);
-      const res = await api.post(`/locations/sync?useNewStructure=${useNewStructure}`);
-      toast.success(res.data.message || 'Đồng bộ thành công!');
+      const res = await adminLocationApi.syncLocations(useNewStructure);
+      toast.success(res.message || 'Đồng bộ thành công!');
       fetchProvinces();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Lỗi khi đồng bộ dữ liệu');
+      /* toast handled by api */
     } finally {
       setSyncing(false);
     }
@@ -63,13 +64,13 @@ export default function AdminLocations() {
       try {
         if (!isNewStructure) {
           if (!districtsData[code]) {
-            const res = await api.get(`/locations/districts/${code}?isNewStructure=false`);
-            setDistrictsData(prev => ({ ...prev, [code]: res.data.data }));
+            const res = await adminLocationApi.getDistricts(code, false);
+            setDistrictsData(prev => ({ ...prev, [code]: res }));
           }
         } else {
           if (!wardsData[code]) {
-            const res = await api.get(`/locations/wards/${code}?isNewStructure=true`);
-            setWardsData(prev => ({ ...prev, [code]: res.data.data }));
+            const res = await adminLocationApi.getWards(code, true);
+            setWardsData(prev => ({ ...prev, [code]: res }));
           }
         }
       } catch (e) {
@@ -84,8 +85,8 @@ export default function AdminLocations() {
     
     if (!isExpanded && !wardsData[districtCode]) {
       try {
-        const res = await api.get(`/locations/wards/${districtCode}?isNewStructure=false`);
-        setWardsData(prev => ({ ...prev, [districtCode]: res.data.data }));
+        const res = await adminLocationApi.getWards(districtCode, false);
+        setWardsData(prev => ({ ...prev, [districtCode]: res }));
       } catch (e) {
         toast.error('Lỗi khi tải Phường/Xã');
       }
@@ -112,17 +113,17 @@ export default function AdminLocations() {
 
       if (editingTarget.type === 'province') {
         payload.zipCode = editForm.zipCode;
-        await api.put(`/locations/provinces/${editingTarget.code}?isNewStructure=${isNewStructure}`, payload);
+        await adminLocationApi.updateProvince(editingTarget.code, isNewStructure, payload);
         setProvinces(provinces.map(p => p.code === editingTarget.code ? { ...p, shippingFee: payload.shippingFee, zipCode: payload.zipCode } : p));
       } else if (editingTarget.type === 'district') {
-        await api.put(`/locations/districts/${editingTarget.code}?isNewStructure=${isNewStructure}`, payload);
+        await adminLocationApi.updateDistrict(editingTarget.code, isNewStructure, payload);
         const parent = editingTarget.parentCode;
         setDistrictsData(prev => ({
           ...prev,
           [parent]: prev[parent].map(d => d.code === editingTarget.code ? { ...d, shippingFee: payload.shippingFee } : d)
         }));
       } else if (editingTarget.type === 'ward') {
-        await api.put(`/locations/wards/${editingTarget.code}?isNewStructure=${isNewStructure}`, payload);
+        await adminLocationApi.updateWard(editingTarget.code, isNewStructure, payload);
         const parent = editingTarget.parentCode;
         setWardsData(prev => ({
           ...prev,

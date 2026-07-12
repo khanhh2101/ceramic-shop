@@ -7,7 +7,7 @@ export const uploadImageToMinio = async (file) => {
     const res = await api.get('/media/presigned-url', {
       params: { fileName: file.name, bucket: 'products' }
     });
-    const { putUrl, minioKey, bucket } = res.data.data;
+    const { putUrl, minioKey, bucket } = res;
 
     // 2. Upload file trực tiếp lên MinIO
     await axios.put(putUrl, file, {

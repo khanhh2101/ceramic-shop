@@ -79,16 +79,16 @@ export const blogService = {
 
 // ── User API service ──────────────────────────────────────────────────────────
 export const userService = {
-  getMe: () => api.get('/users/me'),
+  getMe: () => api.get('/users/me', { skipToast: true }),
   updateProfile: (data) => api.put('/users/me', data),
   uploadAvatar: async (file) => {
     // 1. Xin presigned URL
     const resUrl = await api.get('/users/me/avatar/presigned-url', { params: { fileName: file.name } });
-    const { putUrl, minioKey } = resUrl.data.data;
-    
+    const { putUrl, minioKey } = resUrl.data;
+
     // 2. Upload trực tiếp bằng axios (không qua api.js để tránh chèn token JWT)
     await axios.put(putUrl, file, { headers: { 'Content-Type': file.type } });
-    
+
     // 3. Confirm với backend
     return api.post('/users/me/avatar/confirm', { minioKey });
   },
@@ -139,7 +139,7 @@ export const couponService = {
 export const mediaService = {
   upload: async (file, bucket = 'products', usedIn) => {
     const resUrl = await api.get('/media/presigned-url', { params: { fileName: file.name, bucket } });
-    const { putUrl, minioKey, bucket: actualBucket } = resUrl.data.data;
+    const { putUrl, minioKey, bucket: actualBucket } = resUrl.data;
 
     await axios.put(putUrl, file, { headers: { 'Content-Type': file.type } });
 
@@ -155,7 +155,7 @@ export const mediaService = {
   uploadMultiple: async (files, bucket = 'products') => {
     const uploadPromises = files.map(async (file) => {
       const resUrl = await api.get('/media/presigned-url', { params: { fileName: file.name, bucket } });
-      const { putUrl, minioKey, bucket: actualBucket } = resUrl.data.data;
+      const { putUrl, minioKey, bucket: actualBucket } = resUrl.data;
 
       await axios.put(putUrl, file, { headers: { 'Content-Type': file.type } });
 
@@ -166,7 +166,7 @@ export const mediaService = {
         contentType: file.type,
         fileSize: file.size
       });
-      return resConfirm.data.data;
+      return resConfirm.data;
     });
 
     const results = await Promise.all(uploadPromises);
@@ -175,7 +175,7 @@ export const mediaService = {
   uploadProductImages: async (productId, files) => {
     const uploadPromises = files.map(async (file) => {
       const resUrl = await api.get('/media/presigned-url', { params: { fileName: file.name, bucket: 'products' } });
-      const { putUrl, minioKey } = resUrl.data.data;
+      const { putUrl, minioKey } = resUrl.data;
 
       await axios.put(putUrl, file, { headers: { 'Content-Type': file.type } });
 

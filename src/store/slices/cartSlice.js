@@ -1,5 +1,7 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
+import { logout } from './authSlice';
 import api from '../../services/api';
+import { getErrorMessage } from '@/utils';
 
 // ── Cart Slice ────────────────────────────────────────────────────────────────
 // Giỏ hàng hai chế độ:
@@ -12,21 +14,21 @@ import api from '../../services/api';
 export const fetchCart = createAsyncThunk('cart/fetchCart', async (_, { rejectWithValue }) => {
   try {
     const res = await api.get('/cart');
-    return res.data.data;
+    return res;
   } catch (err) {
-    return rejectWithValue(err.response?.data?.message);
+    return rejectWithValue(getErrorMessage(err));
   }
 });
 
 // Thêm vào giỏ (server-side)
 export const addToCartServer = createAsyncThunk(
   'cart/addToCartServer',
-  async ({ productId, quantity, color }, { rejectWithValue }) => {
+  async ({ productId, quantity, color, colorId }, { rejectWithValue }) => {
     try {
-      const res = await api.post('/cart', { productId, quantity, color });
-      return res.data.data;
+      const res = await api.post('/cart', { productId, quantity, color, colorId });
+      return res;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message);
+      return rejectWithValue(getErrorMessage(err));
     }
   }
 );
@@ -36,10 +38,11 @@ export const updateCartItem = createAsyncThunk(
   'cart/updateCartItem',
   async ({ id, quantity }, { rejectWithValue }) => {
     try {
-      await api.put(`/cart/${id}`, { productId: 0, quantity });
-      return { id, quantity };
+      const res = await api.put(`/cart/${id}`, { productId: 0, quantity });
+      const finalQuantity = res?.data ?? res ?? quantity;
+      return { id, quantity: typeof finalQuantity === 'number' ? finalQuantity : quantity };
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message);
+      return rejectWithValue(getErrorMessage(err));
     }
   }
 );
@@ -52,7 +55,7 @@ export const removeCartItem = createAsyncThunk(
       await api.delete(`/cart/${id}`);
       return id;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message);
+      return rejectWithValue(getErrorMessage(err));
     }
   }
 );
@@ -63,9 +66,9 @@ export const mergeCart = createAsyncThunk(
   async (items, { rejectWithValue }) => {
     try {
       const res = await api.post('/cart/merge', { items });
-      return res.data.data;
+      return res;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message);
+      return rejectWithValue(getErrorMessage(err));
     }
   }
 );
@@ -99,23 +102,23 @@ const cartSlice = createSlice({
   reducers: {
     // Thêm vào giỏ GUEST (chưa đăng nhập)
     addToGuestCart(state, action) {
-      const { productId, quantity, color, product } = action.payload;
-      const itemKey = `${productId}_${color || 'default'}`;
+      const { productId, quantity, color, colorId, product } = action.payload;
+      const itemKey = `${productId}_${colorId || color || 'default'}`;
       const existing = state.guestItems.find((i) => i.itemKey === itemKey);
-      
+
       if (existing) {
         existing.quantity = Math.min(
           existing.quantity + quantity,
           product.stockQuantity || 99
         );
       } else {
-        state.guestItems.push({ productId, quantity, color, product, itemKey });
+        state.guestItems.push({ productId, quantity, color, colorId, product, itemKey });
       }
-      
+
       if (!state.selectedItemIds.includes(itemKey)) {
         state.selectedItemIds.push(itemKey);
       }
-      
+
       saveGuestCart(state.guestItems);
     },
 
@@ -163,14 +166,22 @@ const cartSlice = createSlice({
     toggleSelectAll(state, action) {
       const { isAuth } = action.payload;
       if (isAuth) {
-        const validItems = state.items.filter(i => i.isActive !== false && i.stockQuantity > 0);
+        const validItems = state.items.filter(i => {
+          const isActive = i.isActive ?? i.IsActive ?? true;
+          const stockQty = i.stockQuantity ?? i.StockQuantity ?? 0;
+          return isActive !== false && stockQty > 0;
+        });
         if (state.selectedItemIds.length === validItems.length && validItems.length > 0) {
           state.selectedItemIds = [];
         } else {
-          state.selectedItemIds = validItems.map(i => i.id);
+          state.selectedItemIds = validItems.map(i => i.id ?? i.Id);
         }
       } else {
-        const validItems = state.guestItems.filter(i => (i.product?.isActive ?? true) && (i.product?.stockQuantity ?? 0) > 0);
+        const validItems = state.guestItems.filter(i => {
+          const isActive = i.product?.isActive ?? i.product?.IsActive ?? true;
+          const stockQty = i.product?.stockQuantity ?? i.product?.StockQuantity ?? 0;
+          return isActive !== false && stockQty > 0;
+        });
         if (state.selectedItemIds.length === validItems.length && validItems.length > 0) {
           state.selectedItemIds = [];
         } else {
@@ -190,7 +201,7 @@ const cartSlice = createSlice({
         state.loading = true;
       })
       .addCase(fetchCart.fulfilled, (state, action) => {
-        state.items = action.payload;
+        state.items = Array.isArray(action.payload) ? action.payload : (action.payload?.data || action.payload?.items || []);
         state.loading = false;
       })
       .addCase(fetchCart.rejected, (state, action) => {
@@ -198,15 +209,16 @@ const cartSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(addToCartServer.fulfilled, (state, action) => {
-        const idx = state.items.findIndex((i) => i.id === action.payload.id);
+        const payloadData = action.payload?.data || action.payload;
+        const idx = state.items.findIndex((i) => i.id === payloadData.id);
         if (idx >= 0) {
-          state.items[idx] = action.payload;
+          state.items[idx] = payloadData;
         } else {
-          state.items.push(action.payload);
+          state.items.push(payloadData);
         }
-        
-        if (!state.selectedItemIds.includes(action.payload.id)) {
-          state.selectedItemIds.push(action.payload.id);
+
+        if (!state.selectedItemIds.includes(payloadData.id)) {
+          state.selectedItemIds.push(payloadData.id);
         }
       })
       .addCase(updateCartItem.fulfilled, (state, action) => {
@@ -223,8 +235,15 @@ const cartSlice = createSlice({
         state.selectedItemIds = state.selectedItemIds.filter(id => id !== action.payload);
       })
       .addCase(mergeCart.fulfilled, (state, action) => {
-        state.items = action.payload;
+        state.items = Array.isArray(action.payload) ? action.payload : (action.payload?.data || action.payload?.items || []);
         state.guestItems = [];
+        state.selectedItemIds = [];
+        localStorage.removeItem(GUEST_CART_KEY);
+      })
+      .addCase(logout, (state) => {
+        state.items = [];
+        state.guestItems = [];
+        state.selectedItemIds = [];
         localStorage.removeItem(GUEST_CART_KEY);
       });
   },
@@ -236,55 +255,86 @@ export const {
 } = cartSlice.actions;
 
 // ── Selectors ──
-export const selectCartItems = (state) => {
-  if (state.auth.isAuthenticated) return state.cart.items;
-  return state.cart.guestItems.map(item => ({
-    id: item.itemKey, // Dùng itemKey thay vì productId làm id
-    itemKey: item.itemKey,
-    productId: item.productId,
-    productName: item.product?.name || 'Sản phẩm',
-    productCode: item.product?.code || null,
-    productSlug: item.product?.slug || item.productId,
-    productImageUrl: item.product?.primaryImageUrl || item.product?.images?.[0]?.url || null,
-    price: item.product?.price || 0,
-    quantity: item.quantity,
-    stockQuantity: item.product?.stockQuantity || 0,
-    isActive: item.product?.isActive ?? true,
-    color: item.color
-  }));
-};
+const selectAuthState = (state) => state.auth.isAuthenticated;
+const selectServerItems = (state) => state.cart.items;
+const selectGuestItems = (state) => state.cart.guestItems;
 
 export const selectGuestCartItems = (state) => state.cart.guestItems;
-
-export const selectCartCount = (state) =>
-  state.auth.isAuthenticated 
-    ? state.cart.items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0)
-    : state.cart.guestItems.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
-
-export const selectCartTotal = (state) =>
-  state.auth.isAuthenticated
-    ? state.cart.items.reduce((sum, i) => sum + (Number(i.price) || 0) * (Number(i.quantity) || 0), 0)
-    : state.cart.guestItems.reduce((sum, i) => sum + (Number(i.product?.price) || 0) * (Number(i.quantity) || 0), 0);
-
 export const selectSelectedItemIds = (state) => state.cart.selectedItemIds;
-
-export const selectSelectedCartItems = (state) => {
-  const items = selectCartItems(state);
-  return items.filter(i => state.cart.selectedItemIds.includes(i.id || i.itemKey));
-};
-
-export const selectSelectedCartTotal = (state) => {
-  const selectedItems = selectSelectedCartItems(state);
-  return selectedItems.reduce((sum, i) => sum + (Number(i.price) || 0) * (Number(i.quantity) || 0), 0);
-};
-
-export const selectIsAllSelected = (state) => {
-  const items = selectCartItems(state);
-  const validItems = items.filter(i => i.isActive !== false && i.stockQuantity > 0);
-  if (validItems.length === 0) return false;
-  return state.cart.selectedItemIds.length === validItems.length;
-};
-
 export const selectCartLoading = (state) => state.cart.loading;
 
+export const selectCartItems = createSelector(
+  [selectAuthState, selectServerItems, selectGuestItems],
+  (isAuthenticated, serverItems, guestItems) => {
+    if (isAuthenticated) return serverItems;
+    return guestItems.map(item => {
+      const totalAllocated = item.product?.colors?.filter(c => c.id !== 0)?.reduce((sum, c) => sum + (c.stockQuantity || 0), 0) || 0;
+      const unallocatedStock = (item.product?.stockQuantity || 0) - totalAllocated;
+      
+      let finalStock = item.product?.stockQuantity || 0;
+      if (item.colorId != null && item.colorId !== 0) {
+        finalStock = item.product?.colors?.find(pc => pc.id === item.colorId)?.stockQuantity || 0;
+      } else { // colorId is null, undefined, or 0
+        finalStock = unallocatedStock > 0 ? unallocatedStock : 0;
+      }
+
+      return {
+        id: item.itemKey, // Dùng itemKey thay vì productId làm id
+        itemKey: item.itemKey,
+        productId: item.productId,
+        productName: item.product?.name || 'Sản phẩm',
+        productCode: item.product?.code || null,
+        productSlug: item.product?.slug || item.productId,
+        productImageUrl: item.product?.primaryImageUrl || item.product?.images?.[0]?.url || null,
+        price: item.product?.price || 0,
+        quantity: item.quantity,
+        stockQuantity: finalStock,
+        isActive: item.product?.isActive ?? true,
+        color: item.color,
+        colorId: item.colorId
+      };
+    });
+  }
+);
+
+export const selectCartCount = createSelector(
+  [selectAuthState, selectServerItems, selectGuestItems],
+  (isAuthenticated, serverItems, guestItems) => 
+    isAuthenticated
+      ? serverItems.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0)
+      : guestItems.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0)
+);
+
+export const selectCartTotal = createSelector(
+  [selectAuthState, selectServerItems, selectGuestItems],
+  (isAuthenticated, serverItems, guestItems) => 
+    isAuthenticated
+      ? serverItems.reduce((sum, i) => sum + (Number(i.price) || 0) * (Number(i.quantity) || 0), 0)
+      : guestItems.reduce((sum, i) => sum + (Number(i.product?.price) || 0) * (Number(i.quantity) || 0), 0)
+);
+
+export const selectSelectedCartItems = createSelector(
+  [selectCartItems, selectSelectedItemIds],
+  (items, selectedItemIds) => items.filter(i => selectedItemIds.includes(i.id || i.itemKey))
+);
+
+export const selectSelectedCartTotal = createSelector(
+  [selectSelectedCartItems],
+  (selectedItems) => selectedItems.reduce((sum, i) => sum + (Number(i.price) || 0) * (Number(i.quantity) || 0), 0)
+);
+
+export const selectIsAllSelected = createSelector(
+  [selectCartItems, selectSelectedItemIds],
+  (items, selectedItemIds) => {
+    const validItems = items.filter(i => {
+      const isActive = i.isActive ?? i.IsActive ?? true;
+      const stockQty = i.stockQuantity ?? i.StockQuantity ?? 0;
+      return isActive !== false && stockQty > 0;
+    });
+    if (validItems.length === 0) return false;
+    return selectedItemIds.length === validItems.length;
+  }
+);
+
 export default cartSlice.reducer;
+

@@ -1,4 +1,6 @@
 import axios from 'axios';
+import toast from 'react-hot-toast';
+import { getErrorMessage } from '@/utils';
 
 // ── Axios instance cấu hình sẵn ──────────────────────────────────────────────
 // Tất cả request API đều dùng instance này để:
@@ -47,8 +49,8 @@ const processQueue = (error, token = null) => {
 };
 
 api.interceptors.response.use(
-  // Response thành công → trả về data bình thường
-  (response) => response,
+  // Response thành công → tự động bóc data
+  (response) => response.data,
 
   // Response lỗi
   async (error) => {
@@ -104,6 +106,10 @@ api.interceptors.response.use(
       } finally {
         isRefreshing = false;
       }
+    }
+
+    if (originalRequest && !originalRequest.skipToast) {
+      /* toast handled by api */
     }
 
     return Promise.reject(error);

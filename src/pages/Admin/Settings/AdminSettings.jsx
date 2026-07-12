@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiSave, FiPlus, FiTrash2, FiEdit3, FiRefreshCw, FiUpload, FiImage } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import api from '../../../services/api';
-import { mediaService } from '../../../services/index';
+import { adminSettingsApi } from './api/adminSettingsApi';
+import { mediaService } from '@/services/index';
 
 export default function AdminSettings() {
   const [activeTab, setActiveTab] = useState('store'); // store, home, timeline, email
@@ -28,17 +28,17 @@ export default function AdminSettings() {
     setLoading(true);
     try {
       if (tab === 'store') {
-        const res = await api.get('/settings/admin');
-        setSiteSettings(res.data.data || []);
+        const res = await adminSettingsApi.getSiteSettings();
+        setSiteSettings(Array.isArray(res) ? res : (res?.data || res?.items || []));
       } else if (tab === 'home' || tab === 'about') {
-        const res = await api.get('/settings/home/admin');
-        setHomeBlocks(res.data.data || []);
+        const res = await adminSettingsApi.getHomeBlocks();
+        setHomeBlocks(Array.isArray(res) ? res : (res?.data || res?.items || []));
       } else if (tab === 'timeline') {
-        const res = await api.get('/settings/about/timeline');
-        setTimeline(res.data.data || []);
+        const res = await adminSettingsApi.getTimeline();
+        setTimeline(Array.isArray(res) ? res : (res?.data || res?.items || []));
       } else if (tab === 'email') {
-        const res = await api.get('/settings/email-templates');
-        setEmails(res.data.data || []);
+        const res = await adminSettingsApi.getEmailTemplates();
+        setEmails(Array.isArray(res) ? res : (res?.data || res?.items || []));
       }
     } catch (err) {
       toast.error('Lỗi khi tải dữ liệu');
@@ -56,7 +56,7 @@ export default function AdminSettings() {
   const saveSiteSettings = async () => {
     try {
       const payload = siteSettings.map(s => ({ key: s.key, value: s.value }));
-      await api.put('/settings/admin', payload);
+      await adminSettingsApi.saveSiteSettings(payload);
       toast.success('Lưu cài đặt thành công!');
     } catch (err) {
       toast.error('Lỗi khi lưu cài đặt');
@@ -80,7 +80,7 @@ export default function AdminSettings() {
     const updatedBlock = { ...block, isVisible: !block.isVisible };
     setHomeBlocks(prev => prev.map(b => b.blockKey === block.blockKey ? updatedBlock : b));
     try {
-      await api.put(`/settings/home/${updatedBlock.blockKey}`, {
+      await adminSettingsApi.saveHomeBlock(updatedBlock.blockKey, {
         dataJson: updatedBlock.dataJson,
         isVisible: updatedBlock.isVisible
       });
@@ -177,7 +177,7 @@ export default function AdminSettings() {
 
   const saveHomeBlock = async (block) => {
     try {
-      await api.put(`/settings/home/${block.blockKey}`, {
+      await adminSettingsApi.saveHomeBlock(block.blockKey, {
         dataJson: block.dataJson,
         isVisible: block.isVisible
       });
@@ -194,7 +194,7 @@ export default function AdminSettings() {
 
   const saveEmailTemplate = async (template) => {
     try {
-      await api.put(`/settings/email-templates/${template.slug}`, {
+      await adminSettingsApi.saveEmailTemplate(template.slug, {
         subject: template.subject,
         body: template.body
       });
@@ -208,7 +208,7 @@ export default function AdminSettings() {
   const deleteTimeline = async (id) => {
     if(!window.confirm('Xoá mốc thời gian này?')) return;
     try {
-      await api.delete(`/settings/about/timeline/${id}`);
+      await adminSettingsApi.deleteTimeline(id);
       toast.success('Xoá thành công');
       fetchData('timeline');
     } catch (err) {
@@ -221,7 +221,7 @@ export default function AdminSettings() {
       return;
     }
     try {
-      await api.post('/settings/about/timeline', newTimeline);
+      await adminSettingsApi.addTimeline(newTimeline);
       toast.success('Thêm mốc thời gian thành công!');
       setShowTimelineForm(false);
       setNewTimeline({ year: '', title: '', description: '', imageUrl: '' });
@@ -243,8 +243,8 @@ export default function AdminSettings() {
     try {
       const res = await mediaService.upload(file, 'banners', 'AdminSettings');
       toast.success('Upload ảnh thành công!');
-      if (res.data?.data?.url) {
-         callback(res.data.data.url);
+      if (res?.data?.url) {
+         callback(res.url);
       }
     } catch (err) {
       toast.error('Lỗi khi upload ảnh');
