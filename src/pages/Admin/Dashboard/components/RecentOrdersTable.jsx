@@ -1,41 +1,37 @@
 import React, { useMemo } from 'react';
-import DataTable from '@/components/common/DataTable';
+import AntTable from '@/components/common/AntTable';
 
 export default function RecentOrdersTable({ recentOrders, formatCurrency }) {
     const columns = useMemo(() => [
         {
-            headerName: 'Mã Đơn',
-            field: 'orderCode',
-            width: '120px',
-            cellRenderer: (order) => <span className="font-semibold text-gray-900">#{order.orderCode || order.id?.substring(0,8)}</span>
+            title: 'Mã Đơn',
+            dataIndex: 'orderCode',
+            width: 120,
+            render: (orderCode, order) => <span className="font-semibold text-gray-900">#{orderCode || order.id?.substring(0,8)}</span>
         },
         {
-            headerName: 'Khách Hàng',
-            field: 'customerName',
-            flex: 1,
-            minWidth: '200px',
-            cellClassName: 'text-sm text-gray-600',
-            cellRenderer: (order) => order.customerName || 'Khách vãng lai'
+            title: 'Khách Hàng',
+            dataIndex: 'customerName',
+            width: 200,
+            render: (customerName) => <span className="text-sm text-gray-600">{customerName || 'Khách vãng lai'}</span>
         },
         {
-            headerName: 'Ngày Đặt',
-            field: 'createdAt',
-            width: '150px',
-            cellClassName: 'text-sm text-gray-500',
-            cellRenderer: (order) => new Date(order.createdAt).toLocaleDateString('vi-VN')
+            title: 'Ngày Đặt',
+            dataIndex: 'createdAt',
+            width: 150,
+            render: (createdAt) => <span className="text-sm text-gray-500">{new Date(createdAt).toLocaleDateString('vi-VN')}</span>
         },
         {
-            headerName: 'Tổng Tiền',
-            field: 'totalAmount',
-            width: '150px',
-            cellClassName: 'text-sm font-medium text-gray-900',
-            cellRenderer: (order) => formatCurrency(order.totalAmount)
+            title: 'Tổng Tiền',
+            dataIndex: 'totalAmount',
+            width: 150,
+            render: (totalAmount) => <span className="text-sm font-medium text-gray-900">{formatCurrency(totalAmount)}</span>
         },
         {
-            headerName: 'Trạng Thái',
-            field: 'status',
-            width: '150px',
-            cellRenderer: (order) => (
+            title: 'Trạng Thái',
+            key: 'status',
+            width: 150,
+            render: (_, order) => (
                 <span 
                     className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium text-white shadow-sm"
                     style={{ backgroundColor: order.statusColor || '#888' }}
@@ -54,12 +50,15 @@ export default function RecentOrdersTable({ recentOrders, formatCurrency }) {
                     Xem tất cả
                 </button>
             </div>
-            <DataTable 
-                columns={columns}
-                data={recentOrders}
-                emptyMessage="Chưa có đơn hàng nào"
-                wrapperClassName="flex-1 flex flex-col overflow-hidden"
-            />
+            <div className="flex-1 p-4 overflow-hidden">
+                <AntTable 
+                    columns={columns}
+                    dataSource={recentOrders}
+                    emptyMessage="Chưa có đơn hàng nào"
+                    pagination={false}
+                    scroll={{ y: 'calc(100% - 40px)', x: 'max-content' }}
+                />
+            </div>
         </div>
     );
 }

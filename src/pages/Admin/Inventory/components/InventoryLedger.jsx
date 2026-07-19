@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
-import DataTable from '@/components/common/DataTable';
-import Pagination from '@/components/common/Pagination';
+import { Table } from 'antd';
 import { ArrowDownRight, ArrowUpRight, AlertOctagon, RotateCcw } from 'lucide-react';
 
 const TransactionTypeConfig = {
@@ -10,39 +9,37 @@ const TransactionTypeConfig = {
   4: { label: 'Hoàn trả', color: 'bg-orange-50 text-orange-700 border-orange-200', icon: RotateCcw }
 };
 
-export default function InventoryLedger({ ledger, loading, ledgerParams, onPageChange }) {
+export default function InventoryLedger({ ledger, loading, ledgerParams, onTableChange }) {
   const totalPages = Math.ceil(ledger.totalCount / ledgerParams.pageSize) || 1;
 
   const columns = useMemo(() => [
       { 
-          headerName: 'Mã GD', 
-          field: 'id', 
-          width: '100px',
-          cellRenderer: (row) => (
-              <span className="font-bold text-gray-700 text-sm">#{row.id}</span>
+          title: 'Mã GD', 
+          dataIndex: 'id', 
+          width: 100,
+          render: (id) => (
+              <span className="font-bold text-gray-700 text-sm">#{id}</span>
           )
       },
       { 
-          headerName: 'Thời Gian', 
-          field: 'createdAt', 
-          width: '160px', 
-          cellRenderer: (row) => (
+          title: 'Thời Gian', 
+          dataIndex: 'createdAt', 
+          width: 160, 
+          render: (createdAt) => (
               <div className="flex flex-col">
                   <span className="font-bold text-gray-900 text-xs">
-                      {new Date(row.createdAt).toLocaleDateString('vi-VN')}
+                      {new Date(createdAt).toLocaleDateString('vi-VN')}
                   </span>
                   <span className="text-[10px] font-medium text-gray-500">
-                      {new Date(row.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                   </span>
               </div>
           )
       },
       { 
-          headerName: 'Sản Phẩm', 
-          field: 'product', 
-          flex: 1, 
-          minWidth: '280px', 
-          cellRenderer: (row) => (
+          title: 'Sản Phẩm', 
+          key: 'product', 
+          render: (_, row) => (
             <div className="flex items-center gap-3 w-full py-1">
                 <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 flex-shrink-0 flex items-center justify-center p-0.5">
                     <img src={row.productImageUrl || 'https://placehold.co/600x600/f3f4f6/a1a1aa?text=Image'} className="w-full h-full object-cover rounded-md" alt="" />
@@ -62,11 +59,11 @@ export default function InventoryLedger({ ledger, loading, ledgerParams, onPageC
           )
       },
       { 
-          headerName: 'Loại Giao Dịch', 
-          field: 'type', 
-          width: '150px', 
-          cellRenderer: (row) => {
-              const config = TransactionTypeConfig[row.type] || { label: 'Khác', color: 'bg-gray-50 text-gray-700 border-gray-200', icon: ArrowUpRight };
+          title: 'Loại Giao Dịch', 
+          dataIndex: 'type', 
+          width: 150, 
+          render: (type) => {
+              const config = TransactionTypeConfig[type] || { label: 'Khác', color: 'bg-gray-50 text-gray-700 border-gray-200', icon: ArrowUpRight };
               const Icon = config.icon;
               return (
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold border shadow-sm ${config.color}`}>
@@ -77,63 +74,58 @@ export default function InventoryLedger({ ledger, loading, ledgerParams, onPageC
           }
       },
       { 
-          headerName: 'Số Lượng', 
-          field: 'quantity', 
-          width: '120px', 
-          cellRenderer: (row) => {
+          title: 'Số Lượng', 
+          dataIndex: 'quantity', 
+          width: 120, 
+          render: (quantity, row) => {
               const isDeduction = [2, 3].includes(row.type);
               return (
                   <span className={`font-black text-sm px-2 py-1 rounded-md ${isDeduction ? 'text-red-600 bg-red-50' : 'text-emerald-600 bg-emerald-50'}`}>
-                    {isDeduction ? '-' : '+'}{row.quantity}
+                    {isDeduction ? '-' : '+'}{quantity}
                   </span>
               );
           }
       },
       { 
-          headerName: 'Tham Chiếu', 
-          field: 'referenceId', 
-          width: '160px',
-          cellRenderer: (row) => (
-              row.referenceId ? 
-              <span className="text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-md border border-gray-200">{row.referenceId}</span> : 
+          title: 'Tham Chiếu', 
+          dataIndex: 'referenceId', 
+          width: 160,
+          render: (referenceId) => (
+              referenceId ? 
+              <span className="text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-md border border-gray-200">{referenceId}</span> : 
               <span className="text-gray-400 text-xs">---</span>
           )
       },
       { 
-          headerName: 'Ghi Chú', 
-          field: 'note', 
-          flex: 1,
-          minWidth: '150px', 
-          cellRenderer: (row) => <span className="text-xs font-medium text-gray-500 truncate block" title={row.note}>{row.note || '---'}</span> 
+          title: 'Ghi Chú', 
+          dataIndex: 'note', 
+          render: (note) => <span className="text-xs font-medium text-gray-500 truncate block" title={note}>{note || '---'}</span> 
       },
       { 
-          headerName: 'Người Tạo', 
-          field: 'createdBy', 
-          width: '140px',
-          cellRenderer: (row) => <span className="text-xs font-bold text-gray-700">{row.createdBy || 'Hệ thống'}</span> 
+          title: 'Người Tạo', 
+          dataIndex: 'createdBy', 
+          width: 140,
+          render: (createdBy) => <span className="text-xs font-bold text-gray-700">{createdBy || 'Hệ thống'}</span> 
       },
   ], []);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full overflow-hidden">
-      <div className="flex-1 min-h-[300px]">
-        <DataTable
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full overflow-hidden p-4">
+        <Table
             columns={columns}
-            data={ledger.items || []}
+            dataSource={ledger.items || []}
+            rowKey="id"
             loading={loading}
-            emptyMessage="Không có lịch sử giao dịch nào."
-            wrapperClassName="h-full flex flex-col"
+            pagination={{ 
+                current: ledgerParams.page, 
+                pageSize: ledgerParams.pageSize, 
+                total: ledger.totalCount, 
+                onChange: onTableChange,
+                showSizeChanger: true,
+                pageSizeOptions: ['10', '20', '50', '100']
+            }}
+            scroll={{ x: 'max-content', y: 'calc(100vh - 320px)' }}
         />
-      </div>
-      {totalPages > 1 && (
-        <div className="p-4 border-t border-gray-100 bg-gray-50 shrink-0 flex justify-center">
-            <Pagination 
-                currentPage={ledgerParams.page}
-                totalPages={totalPages}
-                onPageChange={onPageChange}
-            />
-        </div>
-      )}
     </div>
   );
 }

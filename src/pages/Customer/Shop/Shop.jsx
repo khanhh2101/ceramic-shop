@@ -1,20 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { shopApi } from './api/shopApi';
-import { sharedApi } from '@/services/sharedApi';
+import { useCategories, useColors, useTags } from '@/hooks/queries/useMasterData';
+import { useProducts } from '@/hooks/queries/useProducts';
 import ShopSidebar from './components/ShopSidebar';
 import ProductGrid from './components/ProductGrid';
 
 export default function Shop() {
     const [searchParams] = useSearchParams();
 
-    // Data states
-    const [categories, setCategories] = useState([]);
-    const [products, setProducts] = useState([]);
-    const [masterTags, setMasterTags] = useState([]);
-    const [masterColors, setMasterColors] = useState([]);
-    const [totalCount, setTotalCount] = useState(0);
-    const [loading, setLoading] = useState(true);
+    // Master Data from React Query
+    const { data: categories = [] } = useCategories();
+    const { data: masterColors = [] } = useColors();
+    const { data: masterTags = [] } = useTags();
 
     // Filter states
     const [selectedCategories, setSelectedCategories] = useState([]);
@@ -25,59 +22,38 @@ export default function Shop() {
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 20;
 
-    // Fetch master data on mount
-    useEffect(() => {
-        sharedApi.getCategories().then((res) => setCategories(res?.data || res || [])).catch(() => {});
-        sharedApi.getMasterDataGenerals(100).then((res) => setMasterColors(res?.data || res || [])).catch(() => {});
-        sharedApi.getMasterDataGenerals(200).then((res) => setMasterTags(res?.data || res || [])).catch(() => {});
-    }, []);
-
-    // Fetch products whenever filters/search changes
-    useEffect(() => {
-        const fetchProducts = async () => {
-            setLoading(true);
-            try {
-                const params = new URLSearchParams();
-                params.append('page', currentPage);
-                params.append('pageSize', pageSize);
-                params.append('sortBy', sortOption);
-
-                const search = searchParams.get('search');
-                if (search) params.append('search', search);
-
-                if (selectedCategories.length > 0) {
-                    params.append('categoryId', selectedCategories[0]);
-                }
-                
-                // Price filter
-                if (selectedPrices.includes('0 - 100.000')) {
-                    params.append('minPrice', 0);
-                    params.append('maxPrice', 100000);
-                } else if (selectedPrices.includes('100.000 - 200.000')) {
-                    params.append('minPrice', 100000);
-                    params.append('maxPrice', 200000);
-                } else if (selectedPrices.includes('200.000 - 9.999.999')) {
-                    params.append('minPrice', 200000);
-                    params.append('maxPrice', 9999999);
-                }
-                
-                // Tags & Colors
-                selectedTags.forEach(t => params.append('tags', t));
-                selectedColors.forEach(c => params.append('colors', c));
-
-                const res = await shopApi.getProducts(params);
-                setProducts(res?.data || []);
-                setTotalCount(res?.totalCount || 0);
-            } catch (err) {
-                console.error('Failed to fetch products', err);
-                setProducts([]);
-            } finally {
-                setLoading(false);
-            }
+    // Build params dynamically
+    const queryParams = useMemo(() => {
+        const p = {
+            page: currentPage,
+            pageSize,
+            sortBy: sortOption,
         };
+        const search = searchParams.get('search');
+        if (search) p.search = search;
+        
+        if (selectedCategories.length > 0) {
+            p.categoryId = selectedCategories[0];
+        }
 
-        fetchProducts();
+        if (selectedPrices.includes('0 - 100.000')) {
+            p.minPrice = 0; p.maxPrice = 100000;
+        } else if (selectedPrices.includes('100.000 - 200.000')) {
+            p.minPrice = 100000; p.maxPrice = 200000;
+        } else if (selectedPrices.includes('200.000 - 9.999.999')) {
+            p.minPrice = 200000; p.maxPrice = 9999999;
+        }
+
+        if (selectedTags.length > 0) p.tags = selectedTags.join(',');
+        if (selectedColors.length > 0) p.colors = selectedColors.join(',');
+
+        return p;
     }, [searchParams, selectedCategories, selectedPrices, selectedColors, selectedTags, sortOption, currentPage]);
+
+    // Fetch Products using React Query
+    const { data: productsData, isLoading: loading } = useProducts(queryParams);
+    const products = productsData?.items || [];
+    const totalCount = productsData?.totalCount || 0;
 
     const toggleCategory = (id) => {
         setSelectedCategories((prev) => prev.includes(id) ? prev.filter((c) => c !== id) : [id]);

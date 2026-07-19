@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useState, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSmartFilter } from '@/hooks/useSmartFilter';
 import mammoth from 'mammoth';
 import { marked } from 'marked';
@@ -11,10 +11,11 @@ import { uploadImageToMinio } from '@/utils/upload';
 import { adminBlogApi } from './api/adminBlogApi';
 import AdminBlogTable from './components/AdminBlogTable';
 import AdminBlogModal from './components/AdminBlogModal';
+import { useAdminBlogs } from '@/pages/Admin/Blogs/hooks/useAdminBlogs';
+import { useAdminCategories } from '@/pages/Admin/Categories/hooks/useAdminCategories';
 
 export default function AdminBlogs() {
     const queryClient = useQueryClient();
-    const [categories, setCategories] = useState([]);
     
     const {
         pageIndex, pageSize, searchTerm, searchInput, setSearchInput,
@@ -47,40 +48,21 @@ export default function AdminBlogs() {
     const [isImportingDoc, setIsImportingDoc] = useState(false);
     const fileInputRef = useRef(null);
 
-    useEffect(() => {
-        fetchCategories();
-    }, []);
-
-    const fetchCategories = async () => {
-        try {
-            const res = await adminBlogApi.getCategories();
-            setCategories(Array.isArray(res) ? res : (res?.data || res?.items || []));
-        } catch (error) {
-            console.error('Lỗi khi tải danh mục blog', error);
-        }
-    };
+    const { data: categoriesData } = useAdminCategories({ pageSize: 1000 });
+    const categories = categoriesData?.items || [];
 
     const invalidateBlogCaches = () => {
-        queryClient.invalidateQueries({ queryKey: ['adminBlogs'] });
+        queryClient.invalidateQueries({ queryKey: ['admin', 'blogs'] });
         queryClient.invalidateQueries({ queryKey: ['blogs'] });
     };
 
-    const { data: blogsData, isLoading: loading } = useQuery({
-        queryKey: ['adminBlogs', { searchTerm, pageIndex, pageSize }],
-        queryFn: async () => {
-            const params = { pageIndex, pageSize, sortBy: 'createdAt', sortDesc: true };
-            if (searchTerm.trim()) params.search = searchTerm.trim();
-            if (statusFilter !== '') params.status = parseInt(statusFilter);
-            
-            const res = await adminBlogApi.getBlogs(params);
-            const data = res || res;
-            return {
-                items: Array.isArray(data) ? data : (data?.data || data?.items || []),
-                totalPages: data?.totalPages || 1,
-                totalCount: data?.totalCount || 0
-            };
-        },
-        placeholderData: keepPreviousData
+    const { data: blogsData, isLoading: loading } = useAdminBlogs({
+        pageIndex,
+        pageSize,
+        sortBy: 'createdAt',
+        sortDesc: true,
+        search: searchTerm.trim() || undefined,
+        status: statusFilter !== '' ? parseInt(statusFilter) : undefined
     });
 
     const blogs = blogsData?.items || [];

@@ -18,6 +18,11 @@ const AdminMasterData = React.lazy(() => import('@/pages/Admin/MasterData/AdminM
 const AdminInventory = React.lazy(() => import('@/pages/Admin/Inventory/AdminInventory'));
 const AdminPurchaseOrders = React.lazy(() => import('@/pages/Admin/PurchaseOrders/AdminPurchaseOrders'));
 
+const RolesAndPermissions = React.lazy(() => import('@/pages/Admin/System/RolesAndPermissions'));
+const Groups = React.lazy(() => import('@/pages/Admin/System/Groups'));
+const MenuManager = React.lazy(() => import('@/pages/Admin/System/MenuManager'));
+const AdminAccounts = React.lazy(() => import('@/pages/Admin/System/AdminAccounts'));
+
 export const adminRoutesMap = {
   '/admin': { component: AdminDashboard, title: 'Tổng Quan' },
   '/admin/products': { component: AdminProducts, title: 'Sản Phẩm' },
@@ -33,4 +38,8 @@ export const adminRoutesMap = {
   '/admin/locations': { component: AdminLocations, title: 'Cửa Hàng' },
   '/admin/inventory': { component: AdminInventory, title: 'Kho Hàng' },
   '/admin/purchase-orders': { component: AdminPurchaseOrders, title: 'Nhập Hàng' },
+  '/admin/rbac-roles': { component: RolesAndPermissions, title: 'Vai Trò & Quyền' },
+  '/admin/rbac-groups': { component: Groups, title: 'Nhóm Người Dùng' },
+  '/admin/rbac-menus': { component: MenuManager, title: 'Menu Động' },
+  '/admin/rbac-accounts': { component: AdminAccounts, title: 'Tài Khoản Nội Bộ' },
 };

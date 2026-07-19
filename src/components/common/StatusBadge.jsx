@@ -14,9 +14,10 @@ export default function StatusBadge({
       
       case 'visibility':
         // status here means `isHidden`
-        return status
-          ? { text: textOverrides.true || 'Đang ẩn', color: 'bg-orange-100 text-orange-700' }
-          : { text: textOverrides.false || 'Hiển thị', color: 'bg-green-100 text-green-700' };
+        const isHidden = status === true || status === 'true';
+        return isHidden
+          ? { text: textOverrides.true || textOverrides['true'] || 'Đang ẩn', color: 'bg-orange-100 text-orange-700' }
+          : { text: textOverrides.false || textOverrides['false'] || 'Hiển thị', color: 'bg-green-100 text-green-700' };
 
       case 'order':
         // 1: Pending, 2: Processing, 3: Shipped, 4: Delivered, 5: Cancelled

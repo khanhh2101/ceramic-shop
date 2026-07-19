@@ -109,10 +109,12 @@ export default function OrderTrackPage() {
                                                 {item.productName}
                                             </span>
                                             <div className="order-item-meta">
-                                                {item.productCode && (
+                                                {item.sku ? (
+                                                    <span>SKU: {item.sku}</span>
+                                                ) : item.productCode ? (
                                                     <span>SKU: {item.productCode}</span>
-                                                )}
-                                                {item.productCode && item.color && <span>|</span>}
+                                                ) : null}
+                                                {(item.sku || item.productCode) && item.color && <span>|</span>}
                                                 {item.color && (
                                                     <span>Màu: <span className="capitalize">{item.color}</span></span>
                                                 )}
@@ -155,7 +157,7 @@ export default function OrderTrackPage() {
                                 </div>
                                 {(order.discount > 0) && (
                                     <div className="order-total-row discount">
-                                        <span>Giảm giá</span>
+                                        <span>Giảm giá{order.couponCode ? ` (Mã: ${order.couponCode})` : ''}</span>
                                         <span>-{(order.discount || 0).toLocaleString('vi-VN')} ₫</span>
                                     </div>
                                 )}

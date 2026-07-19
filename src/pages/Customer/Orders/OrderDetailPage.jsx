@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
 import { addToCartServer } from '@/store/slices/cartSlice';
 import { orderApi } from './api/orderApi';
+import { useOrderDetails } from '@/pages/Customer/Orders/hooks/useOrdersQueries';
 import { FiArrowLeft, FiCheckCircle, FiRefreshCcw } from 'react-icons/fi';
 import OrderTimeline from './components/OrderTimeline';
 import ReviewModal from './components/ReviewModal';
 import './Orders.css';
-import { getErrorMessage } from '@/utils';
 
 export default function OrderDetailPage() {
     const { orderCode } = useParams();
@@ -120,7 +120,7 @@ export default function OrderDetailPage() {
     if (error || !order) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-[#faf7f4] px-5">
-                <p className="text-[#e53e3e] mb-4">{error || 'Không tìm thấy đơn hàng'}</p>
+                <p className="text-[#e53e3e] mb-4">{error?.message || 'Không tìm thấy đơn hàng'}</p>
                 <Link to="/orders" className="text-[12px] uppercase tracking-[1px] border-b border-[#1a1a1a] pb-0.5 text-[#1a1a1a]">
                     Quay lại danh sách
                 </Link>
@@ -190,10 +190,12 @@ export default function OrderDetailPage() {
                                                 {item.productName}
                                             </Link>
                                             <div className="order-item-meta">
-                                                {item.productCode && (
+                                                {item.sku ? (
+                                                    <span>SKU: {item.sku}</span>
+                                                ) : item.productCode ? (
                                                     <span>SKU: {item.productCode}</span>
-                                                )}
-                                                {item.productCode && item.color && <span>|</span>}
+                                                ) : null}
+                                                {(item.sku || item.productCode) && item.color && <span>|</span>}
                                                 {item.color && (
                                                     <span>Màu: <span className="capitalize">{item.color}</span></span>
                                                 )}
@@ -237,6 +239,13 @@ export default function OrderDetailPage() {
                                     <span className="order-info-badge">{order.paymentMethodText || 'COD'}</span>
                                 </p>
                             </div>
+
+                            {order.note && (
+                                <div className="mt-4 pt-4 border-t border-stone-200">
+                                    <p className="text-sm text-stone-500 mb-1">Ghi chú của bạn:</p>
+                                    <p className="text-sm text-stone-800 italic bg-stone-50 p-3 rounded-md">"{order.note}"</p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="order-card alt">
@@ -252,7 +261,7 @@ export default function OrderDetailPage() {
                                 </div>
                                 {(order.discount > 0) && (
                                     <div className="order-total-row discount">
-                                        <span>Giảm giá</span>
+                                        <span>Giảm giá{order.couponCode ? ` (Mã: ${order.couponCode})` : ''}</span>
                                         <span>-{(order.discount || 0).toLocaleString('vi-VN')} ₫</span>
                                     </div>
                                 )}

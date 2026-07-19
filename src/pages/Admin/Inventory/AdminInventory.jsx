@@ -1,28 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Archive, AlertTriangle, List } from 'lucide-react';
 import TabRenderer from '@/components/Layout/components/TabRenderer';
 import { toast } from 'react-hot-toast';
 
 import adminInventoryApi from './api/adminInventoryApi';
-import { adminProductApi } from '@/pages/Admin/Products/api/adminProductApi';
 
 import InventoryOverview from './components/InventoryOverview';
 import InventoryLedger from './components/InventoryLedger';
 import InventoryAdjustForm from './components/InventoryAdjustForm';
+import { useAdminLowStock, useAdminLedger } from '@/pages/Admin/Inventory/hooks/useAdminInventory';
+import { useAdminProducts } from '@/pages/Admin/Products/hooks/useAdminProducts';
+import { useColors } from '@/hooks/queries/useMasterData';
 
 export default function AdminInventory() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
-  const [lowStockProducts, setLowStockProducts] = useState([]);
-  const [ledger, setLedger] = useState({ items: [], totalCount: 0 });
-  const [loading, setLoading] = useState(false);
   
   const [ledgerParams, setLedgerParams] = useState({ page: 1, pageSize: 20 });
-  
-  // States cho Form Điều chỉnh kho
-  const [products, setProducts] = useState([]);
-  const [masterColors, setMasterColors] = useState([]);
   const [adjustForm, setAdjustForm] = useState({
     productId: '',
     colorId: '',
@@ -31,74 +26,20 @@ export default function AdminInventory() {
     referenceId: '',
     note: ''
   });
-
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
-    fetchLowStock();
-    fetchProducts();
-    fetchMasterColors();
-  }, []);
+  const { data: lowStockProducts = [] } = useAdminLowStock(15);
 
-  const fetchMasterColors = async () => {
-    try {
-      const resColor = await adminProductApi.getColors();
-      const arr = Array.isArray(resColor) ? resColor : (resColor?.data || []);
-      const mapped = arr.map(item => ({
-        id: item.genCd,
-        name: item.genNameVn,
-        hexColor: item.color
-      }));
-      setMasterColors(mapped);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const { data: productsData } = useAdminProducts({ pageSize: 1000 });
+  const products = productsData?.items || [];
 
-  useEffect(() => {
-    if (activeTab === 'ledger') {
-      fetchLedger();
-    }
-  }, [activeTab, ledgerParams]);
+  const { data: masterColors = [] } = useColors();
 
-  const fetchLowStock = async () => {
-    try {
-      const res = await adminInventoryApi.getLowStock(15);
-      if (res?.success || res?.isSuccess) {
-        setLowStockProducts(res.data);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchProducts = async () => {
-    try {
-      const res = await adminProductApi.getProducts({ pageSize: 1000 });
-      if (res?.success || res?.isSuccess) {
-        setProducts(res.data || []);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchLedger = async () => {
-    setLoading(true);
-    try {
-      const res = await adminInventoryApi.getLedger(ledgerParams);
-      // Backend returns PagedResponse directly, so res is { data: [...], totalCount: ... }
-      if (res && res.data) {
-        setLedger({ items: res.data, totalCount: res.totalCount });
-      } else if (res?.success || res?.isSuccess) {
-        setLedger({ items: res.data?.data || [], totalCount: res.data?.totalCount || 0 });
-      }
-    } catch (err) {
-      toast.error('Lỗi khi tải sổ kho');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: ledgerData, isLoading: loading } = useAdminLedger(ledgerParams, {
+      enabled: activeTab === 'ledger'
+  });
+  
+  const ledger = ledgerData || { items: [], totalCount: 0 };
 
   const handleAdjustStock = async (e) => {
     e.preventDefault();
@@ -121,13 +62,10 @@ export default function AdminInventory() {
         toast.success(res.message || 'Cập nhật kho thành công');
         setAdjustForm({ productId: '', colorId: '', type: 1, quantity: 1, referenceId: '', note: '' });
         setIsModalOpen(false);
-        fetchLowStock();
-        if (activeTab === 'ledger') fetchLedger();
-        fetchProducts(); // Cập nhật lại danh sách sản phẩm trong dropdown
-        queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+        // fetchLowStock, fetchLedger, fetchProducts removed (invalidated instead)
+        queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
         queryClient.invalidateQueries({ queryKey: ['products'] });
-        queryClient.invalidateQueries({ queryKey: ['lowStock'] });
-        queryClient.invalidateQueries({ queryKey: ['ledger'] });
+        queryClient.invalidateQueries({ queryKey: ['admin', 'inventory'] });
       } else {
         toast.error(res?.message || 'Có lỗi xảy ra');
       }
@@ -162,7 +100,7 @@ export default function AdminInventory() {
           ledger={ledger}
           loading={loading}
           ledgerParams={ledgerParams}
-          onPageChange={(page) => setLedgerParams(p => ({ ...p, page }))}
+          onTableChange={(page, pageSize) => setLedgerParams(p => ({ ...p, page, pageSize }))}
         />
       )
     }

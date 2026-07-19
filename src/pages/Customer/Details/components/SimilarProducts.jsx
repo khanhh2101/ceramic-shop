@@ -10,11 +10,13 @@ export default function SimilarProducts({ similarProducts }) {
     return (
         <div className="details-similar">
             <h2 className="details-similar-title">
-                {t('product.similar')}
+                You may also like
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mt-6">
+            <div className="details-similar-carousel">
                 {similarProducts.map((item) => (
-                    <ProductCard key={item.id} product={item} />
+                    <div key={item.id} className="details-similar-carousel-item">
+                        <ProductCard product={item} />
+                    </div>
                 ))}
             </div>
         </div>

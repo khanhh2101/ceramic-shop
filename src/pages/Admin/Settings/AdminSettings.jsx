@@ -3,10 +3,12 @@ import { FiSave, FiPlus, FiTrash2, FiEdit3, FiRefreshCw, FiUpload, FiImage } fro
 import toast from 'react-hot-toast';
 import { adminSettingsApi } from './api/adminSettingsApi';
 import { mediaService } from '@/services/index';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAdminSiteSettings, useAdminHomeBlocks, useAdminTimeline, useAdminEmailTemplates } from '@/hooks/queries/admin/useAdminSettings';
 
 export default function AdminSettings() {
   const [activeTab, setActiveTab] = useState('store'); // store, home, timeline, email
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
 
   // --- States for Tabs ---
   const [siteSettings, setSiteSettings] = useState([]);
@@ -18,35 +20,31 @@ export default function AdminSettings() {
   const [newTimeline, setNewTimeline] = useState({ year: '', title: '', description: '', imageUrl: '' });
   const [uploadingField, setUploadingField] = useState(null); // Để track field đang upload
   const [previewImage, setPreviewImage] = useState(null); // Lightbox preview
+  const [previewEmailTemplate, setPreviewEmailTemplate] = useState(null); // Biến chứa HTML của email để xem phóng to
   const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    fetchData(activeTab);
-  }, [activeTab]);
+  const { data: qSiteSettings, isLoading: loadingSite } = useAdminSiteSettings();
+  const { data: qHomeBlocks, isLoading: loadingHome } = useAdminHomeBlocks();
+  const { data: qTimeline, isLoading: loadingTimeline } = useAdminTimeline();
+  const { data: qEmailTemplates, isLoading: loadingEmails } = useAdminEmailTemplates();
 
-  const fetchData = async (tab) => {
-    setLoading(true);
-    try {
-      if (tab === 'store') {
-        const res = await adminSettingsApi.getSiteSettings();
-        setSiteSettings(Array.isArray(res) ? res : (res?.data || res?.items || []));
-      } else if (tab === 'home' || tab === 'about') {
-        const res = await adminSettingsApi.getHomeBlocks();
-        setHomeBlocks(Array.isArray(res) ? res : (res?.data || res?.items || []));
-      } else if (tab === 'timeline') {
-        const res = await adminSettingsApi.getTimeline();
-        setTimeline(Array.isArray(res) ? res : (res?.data || res?.items || []));
-      } else if (tab === 'email') {
-        const res = await adminSettingsApi.getEmailTemplates();
-        setEmails(Array.isArray(res) ? res : (res?.data || res?.items || []));
-      }
-    } catch (err) {
-      toast.error('Lỗi khi tải dữ liệu');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = loadingSite || loadingHome || loadingTimeline || loadingEmails;
+
+  useEffect(() => {
+    if (qSiteSettings) setSiteSettings(qSiteSettings);
+  }, [qSiteSettings]);
+
+  useEffect(() => {
+    if (qHomeBlocks) setHomeBlocks(qHomeBlocks);
+  }, [qHomeBlocks]);
+
+  useEffect(() => {
+    if (qTimeline) setTimeline(qTimeline);
+  }, [qTimeline]);
+
+  useEffect(() => {
+    if (qEmailTemplates) setEmails(qEmailTemplates);
+  }, [qEmailTemplates]);
 
   // ── Handlers: Site Settings ──
   const handleSiteSettingChange = (key, value) => {
@@ -57,6 +55,7 @@ export default function AdminSettings() {
     try {
       const payload = siteSettings.map(s => ({ key: s.key, value: s.value }));
       await adminSettingsApi.saveSiteSettings(payload);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'settings', 'site'] });
       toast.success('Lưu cài đặt thành công!');
     } catch (err) {
       toast.error('Lỗi khi lưu cài đặt');
@@ -84,6 +83,7 @@ export default function AdminSettings() {
         dataJson: updatedBlock.dataJson,
         isVisible: updatedBlock.isVisible
       });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'settings', 'homeBlocks'] });
       toast.success(`Đã cập nhật trạng thái hiển thị của block ${block.displayName}`);
     } catch (err) {
       toast.error(`Lỗi khi cập nhật trạng thái hiển thị`);
@@ -181,6 +181,7 @@ export default function AdminSettings() {
         dataJson: block.dataJson,
         isVisible: block.isVisible
       });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'settings', 'homeBlocks'] });
       toast.success(`Lưu block ${block.displayName} thành công!`);
     } catch (err) {
       toast.error(`Lỗi khi lưu block ${block.displayName}`);
@@ -198,6 +199,7 @@ export default function AdminSettings() {
         subject: template.subject,
         body: template.body
       });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'settings', 'emailTemplates'] });
       toast.success(`Lưu mẫu ${template.displayName} thành công!`);
     } catch (err) {
       toast.error(`Lỗi khi lưu mẫu ${template.displayName}`);
@@ -209,8 +211,8 @@ export default function AdminSettings() {
     if(!window.confirm('Xoá mốc thời gian này?')) return;
     try {
       await adminSettingsApi.deleteTimeline(id);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'settings', 'timeline'] });
       toast.success('Xoá thành công');
-      fetchData('timeline');
     } catch (err) {
       toast.error('Lỗi khi xoá');
     }
@@ -225,7 +227,7 @@ export default function AdminSettings() {
       toast.success('Thêm mốc thời gian thành công!');
       setShowTimelineForm(false);
       setNewTimeline({ year: '', title: '', description: '', imageUrl: '' });
-      fetchData('timeline');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'settings', 'timeline'] });
     } catch (err) {
       toast.error('Lỗi khi thêm mốc thời gian');
     }
@@ -242,9 +244,12 @@ export default function AdminSettings() {
 
     try {
       const res = await mediaService.upload(file, 'banners', 'AdminSettings');
+      console.log('UPLOAD RES:', res);
       toast.success('Upload ảnh thành công!');
-      if (res?.data?.url) {
-         callback(res.url);
+      if (res?.data?.url || res?.url) {
+         callback(res?.data?.url || res?.url);
+      } else {
+         console.error('Không tìm thấy url trong res:', res);
       }
     } catch (err) {
       toast.error('Lỗi khi upload ảnh');
@@ -267,6 +272,127 @@ export default function AdminSettings() {
         <h1 className="text-2xl font-bold text-gray-900 font-display">Cài đặt hệ thống</h1>
         <p className="text-sm text-gray-500 mt-1">Quản lý cấu hình website, trang chủ và email.</p>
       </div>
+
+      {/* Navigation Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-6 overflow-x-auto">
+          {['home', 'about', 'shop', 'contact', 'timeline', 'email', 'store'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === tab 
+                  ? 'border-[#b5624a] text-[#b5624a]' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              {tab === 'home' ? 'Trang chủ' : 
+               tab === 'about' ? 'Giới thiệu' :
+               tab === 'shop' ? 'Cửa hàng' :
+               tab === 'contact' ? 'Liên hệ' :
+               tab === 'timeline' ? 'Lịch sử' :
+               tab === 'email' ? 'Mẫu Email' : 'Cấu hình chung'}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Content Area */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-[60vh]">
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#b5624a]"></div>
+          </div>
+        ) : (
+          <>
+            {/* ── TAB: CẤU HÌNH CHUNG ── */}
+            {activeTab === 'store' && (
+              <div className="space-y-8 max-w-4xl">
+                {/* Group By 'Group' property */}
+                {[...new Set(siteSettings.map(s => s.group))].map(group => {
+                  const groupSettings = siteSettings.filter(s => s.group === group);
+                  if (groupSettings.length === 0) return null;
+                  
+                  return (
+                    <div key={group} className="border border-gray-200 rounded-lg p-5">
+                      <h3 className="text-lg font-medium text-gray-900 capitalize mb-4 border-b pb-2">
+                        {group} Settings
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {groupSettings.map(setting => {
+                          const isJsonOrTextarea = setting.dataType === 'json' || setting.key.includes('description') || setting.key.includes('about') || setting.key.includes('map');
+                          const isImage = setting.dataType === 'image' || isImageField(setting.key);
+
+                          return (
+                            <div key={setting.key} className={isJsonOrTextarea ? 'md:col-span-2' : ''}>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                {setting.description || setting.displayName} <span className="text-gray-400 font-normal">({setting.key})</span>
+                              </label>
+                              
+                              {isImage ? (
+                                <div className="flex gap-2 items-start">
+                                  <div className="flex-1 space-y-2">
+                                    <input
+                                      type="text"
+                                      value={setting.value || ''}
+                                      onChange={(e) => handleSiteSettingChange(setting.key, e.target.value)}
+                                      placeholder="URL ảnh"
+                                      className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
+                                    />
+                                    <label className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-colors ${uploadingField === setting.key ? 'bg-gray-200 text-gray-500' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                                      <FiUpload /> {uploadingField === setting.key ? 'Đang tải lên...' : 'Tải ảnh lên'}
+                                      <input 
+                                        type="file" 
+                                        className="hidden" 
+                                        accept="image/*" 
+                                        onChange={(e) => {
+                                          setUploadingField(setting.key);
+                                          handleFileUpload(e, (url) => handleSiteSettingChange(setting.key, url));
+                                        }}
+                                      />
+                                    </label>
+                                  </div>
+                                  {setting.value && (
+                                    <img 
+                                      src={setting.value} 
+                                      alt="Preview" 
+                                      className="w-16 h-16 object-cover rounded border bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity" 
+                                      onClick={() => setPreviewImage(setting.value)}
+                                    />
+                                  )}
+                                </div>
+                              ) : isJsonOrTextarea ? (
+                                <textarea
+                                  value={setting.value || ''}
+                                  onChange={(e) => handleSiteSettingChange(setting.key, e.target.value)}
+                                  rows={4}
+                                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
+                                />
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={setting.value || ''}
+                                  onChange={(e) => handleSiteSettingChange(setting.key, e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="flex justify-end pt-4 border-t">
+                  <button
+                    onClick={saveSiteSettings}
+                    className="flex items-center gap-2 bg-[#b5624a] text-white px-6 py-2 rounded-lg hover:bg-[#8e4a36] transition-colors"
+                  >
+                    <FiSave /> Lưu cấu hình
+                  </button>
+                </div>
+              </div>
+            )}
 
       {/* ── Cửa hàng Tab ── */}
       {activeTab === 'shop' && (
@@ -483,126 +609,6 @@ export default function AdminSettings() {
             })}
         </div>
       )}
-
-      {/* Navigation Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-6 overflow-x-auto">
-          {['home', 'about', 'shop', 'contact', 'emails', 'general'].map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === tab 
-                  ? 'border-[#b5624a] text-[#b5624a]' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab === 'home' ? 'Trang chủ' : 
-               tab === 'about' ? 'Giới thiệu' :
-               tab === 'shop' ? 'Cửa hàng' :
-               tab === 'contact' ? 'Liên hệ' :
-               tab === 'emails' ? 'Mẫu Email' : 'Cấu hình chung'}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Content Area */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-[60vh]">
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#b5624a]"></div>
-          </div>
-        ) : (
-          <>
-            {/* ── TAB: CẤU HÌNH CHUNG ── */}
-            {activeTab === 'store' && (
-              <div className="space-y-8 max-w-4xl">
-                {/* Group By 'Group' property */}
-                {[...new Set(siteSettings.map(s => s.group))].map(group => {
-                  const groupSettings = siteSettings.filter(s => s.group === group);
-                  if (groupSettings.length === 0) return null;
-                  
-                  return (
-                    <div key={group} className="border border-gray-200 rounded-lg p-5">
-                      <h3 className="text-lg font-medium text-gray-900 capitalize mb-4 border-b pb-2">
-                        {group} Settings
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {groupSettings.map(setting => {
-                          const isJsonOrTextarea = setting.dataType === 'json' || setting.key.includes('description') || setting.key.includes('about') || setting.key.includes('map');
-                          const isImage = setting.dataType === 'image' || isImageField(setting.key);
-
-                          return (
-                            <div key={setting.key} className={isJsonOrTextarea ? 'md:col-span-2' : ''}>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">
-                                {setting.description || setting.displayName} <span className="text-gray-400 font-normal">({setting.key})</span>
-                              </label>
-                              
-                              {isImage ? (
-                                <div className="flex gap-2 items-start">
-                                  <div className="flex-1 space-y-2">
-                                    <input
-                                      type="text"
-                                      value={setting.value || ''}
-                                      onChange={(e) => handleSiteSettingChange(setting.key, e.target.value)}
-                                      placeholder="URL ảnh"
-                                      className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
-                                    />
-                                    <label className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-colors ${uploadingField === setting.key ? 'bg-gray-200 text-gray-500' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-                                      <FiUpload /> {uploadingField === setting.key ? 'Đang tải lên...' : 'Tải ảnh lên'}
-                                      <input 
-                                        type="file" 
-                                        className="hidden" 
-                                        accept="image/*" 
-                                        onChange={(e) => {
-                                          setUploadingField(setting.key);
-                                          handleFileUpload(e, (url) => handleSiteSettingChange(setting.key, url));
-                                        }}
-                                      />
-                                    </label>
-                                  </div>
-                                  {setting.value && (
-                                    <img 
-                                      src={setting.value} 
-                                      alt="Preview" 
-                                      className="w-16 h-16 object-cover rounded border bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity" 
-                                      onClick={() => setPreviewImage(setting.value)}
-                                    />
-                                  )}
-                                </div>
-                              ) : isJsonOrTextarea ? (
-                                <textarea
-                                  value={setting.value || ''}
-                                  onChange={(e) => handleSiteSettingChange(setting.key, e.target.value)}
-                                  rows={4}
-                                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
-                                />
-                              ) : (
-                                <input
-                                  type="text"
-                                  value={setting.value || ''}
-                                  onChange={(e) => handleSiteSettingChange(setting.key, e.target.value)}
-                                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
-                                />
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-                <div className="flex justify-end pt-4 border-t">
-                  <button
-                    onClick={saveSiteSettings}
-                    className="flex items-center gap-2 bg-[#b5624a] text-white px-6 py-2 rounded-lg hover:bg-[#8e4a36] transition-colors"
-                  >
-                    <FiSave /> Lưu cấu hình
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* ── TAB: TRANG CHỦ & GIỚI THIỆU ── */}
             {(activeTab === 'home' || activeTab === 'about') && (
@@ -986,44 +992,113 @@ export default function AdminSettings() {
 
             {/* ── TAB: EMAIL TEMPLATES ── */}
             {activeTab === 'email' && (
-              <div className="space-y-6 max-w-4xl">
-                <p className="text-sm text-gray-500 mb-6">Chỉnh sửa nội dung các mẫu email tự động được gửi từ hệ thống.</p>
-                {emails.map(email => (
-                  <div key={email.slug} className="border border-gray-200 rounded-lg p-5">
-                    <div className="flex justify-between items-center mb-4 border-b pb-2">
-                      <h3 className="text-lg font-medium text-gray-900">{email.displayName}</h3>
-                      <button
-                        onClick={() => saveEmailTemplate(email)}
-                        className="text-sm bg-gray-900 text-white px-3 py-1.5 rounded hover:bg-gray-800 flex items-center gap-2"
-                      >
-                        <FiSave size={14}/> Lưu Template
-                      </button>
-                    </div>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Tiêu đề Email (Subject)</label>
-                        <input
-                          type="text"
-                          value={email.subject}
-                          onChange={(e) => handleEmailChange(email.slug, 'subject', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
-                        />
+              <div className="flex flex-col lg:flex-row gap-8 items-start">
+                
+                {/* Cột trái: Danh sách mẫu Email */}
+                <div className="flex-1 space-y-6 w-full lg:max-w-3xl">
+                  <p className="text-sm text-gray-500 mb-6">Chỉnh sửa nội dung các mẫu email tự động được gửi từ hệ thống.</p>
+                  {emails.map(email => {
+                    const usedSystemVariables = siteSettings.map(s => {
+                      if (!s.key) return null;
+                      const parts = s.key.split('_');
+                      const pascalCaseKey = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join('');
+                      const placeholder = `{{${pascalCaseKey}}}`;
+                      if ((email.subject || '').includes(placeholder) || (email.body || '').includes(placeholder)) {
+                        return placeholder;
+                      }
+                      return null;
+                    }).filter(Boolean);
+
+                    return (
+                      <div key={email.slug} className="border border-gray-200 rounded-lg p-5">
+                        <div className="flex justify-between items-center mb-4 border-b pb-2">
+                          <h3 className="text-lg font-medium text-gray-900">{email.displayName}</h3>
+                          <button
+                            onClick={() => saveEmailTemplate(email)}
+                            className="text-sm bg-gray-900 text-white px-3 py-1.5 rounded hover:bg-gray-800 flex items-center gap-2"
+                          >
+                            <FiSave size={14}/> Lưu Template
+                          </button>
+                        </div>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Tiêu đề Email (Subject)</label>
+                            <input
+                              type="text"
+                              value={email.subject}
+                              onChange={(e) => handleEmailChange(email.slug, 'subject', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <label className="block text-xs font-medium text-gray-700">
+                                Nội dung HTML (Body)
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => setPreviewEmailTemplate(email.body)}
+                                className="text-xs text-primary-600 hover:text-primary-700 flex items-center gap-1 bg-primary-50 px-3 py-1.5 rounded-md font-medium"
+                              >
+                                Xem trước giao diện (Preview)
+                              </button>
+                            </div>
+                            <textarea
+                              value={email.body}
+                              onChange={(e) => handleEmailChange(email.slug, 'body', e.target.value)}
+                              rows={16}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-xs font-mono"
+                            />
+                            <div className="bg-gray-50 border border-gray-200 rounded-md p-3 mt-2">
+                              <p className="text-xs text-gray-700 font-medium mb-1">Biến của riêng email này (Dữ liệu thay đổi theo từng đơn/user):</p>
+                              <p className="text-xs text-gray-500 mb-3">
+                                {email.availablePlaceholders.split(',').map(p => p.trim()).filter(Boolean).map(p => (
+                                  <code key={p} className="bg-white border border-gray-200 px-1.5 py-0.5 rounded mr-1.5 mb-1.5 inline-block">{p}</code>
+                                ))}
+                              </p>
+                              
+                              <p className="text-xs text-gray-700 font-medium mb-1">Biến hệ thống đang được sử dụng trong template này:</p>
+                              {usedSystemVariables.length > 0 ? (
+                                  <p className="text-xs text-gray-500 mb-0">
+                                    {usedSystemVariables.map(p => (
+                                      <code key={p} className="bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded mr-1.5 mb-1.5 inline-block">{p}</code>
+                                    ))}
+                                  </p>
+                              ) : (
+                                  <span className="text-[11px] text-gray-400 italic">Chưa có biến hệ thống nào được sử dụng. Hãy copy từ danh sách bên phải dán vào đây!</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1 flex justify-between">
-                          <span>Nội dung HTML (Body)</span>
-                          <span className="text-gray-400 font-normal">Biến có sẵn: {email.availablePlaceholders}</span>
-                        </label>
-                        <textarea
-                          value={email.body}
-                          onChange={(e) => handleEmailChange(email.slug, 'body', e.target.value)}
-                          rows={8}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:border-[#b5624a] text-sm font-mono"
-                        />
-                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Cột phải: Biến hệ thống (Sticky) */}
+                <div className="w-full lg:w-80 sticky top-4 flex-shrink-0">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 max-h-[85vh] overflow-y-auto shadow-sm">
+                    <h3 className="text-sm font-semibold text-blue-900 mb-2">Biến hệ thống (Dùng chung)</h3>
+                    <p className="text-[11px] text-blue-800 mb-4 leading-relaxed">
+                      Các biến này lấy tự động từ tab <strong>Cấu hình chung</strong>. Bạn có thể sử dụng (copy/paste) chúng vào bất kỳ mẫu email nào ở cột bên trái.
+                    </p>
+                    <div className="flex flex-col gap-3">
+                      {siteSettings.map(s => {
+                        if (!s.key) return null;
+                        const parts = s.key.split('_');
+                        const pascalCaseKey = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join('');
+                        const placeholder = `{{${pascalCaseKey}}}`;
+                        return (
+                          <div key={s.key} className="flex flex-col border-b border-blue-100/50 pb-2 last:border-0 last:pb-0">
+                            <code className="text-[11px] font-bold text-blue-900 bg-white px-1.5 py-0.5 rounded border border-blue-200 w-fit mb-1">{placeholder}</code>
+                            <span className="text-[10px] text-blue-700">{s.description || s.displayName || s.key}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                ))}
+                </div>
+
               </div>
             )}
           </>
@@ -1041,6 +1116,33 @@ export default function AdminSettings() {
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
             <img src={previewImage} alt="Preview Zoom" className="max-h-[80vh] object-contain rounded shadow-2xl" />
+          </div>
+        </div>
+      )}
+
+      {/* ── Email Preview Modal ── */}
+      {previewEmailTemplate !== null && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 sm:p-8 backdrop-blur-sm" onClick={() => setPreviewEmailTemplate(null)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-full max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center px-6 py-4 border-b bg-gray-50">
+              <h3 className="font-semibold text-gray-800">Xem trước Giao diện Email</h3>
+              <button 
+                className="text-gray-400 hover:text-gray-800 transition-colors text-2xl font-bold" 
+                onClick={() => setPreviewEmailTemplate(null)}
+              >
+                &times;
+              </button>
+            </div>
+            <div className="flex-1 bg-gray-200 p-4 sm:p-8 overflow-y-auto flex justify-center">
+              <div className="bg-white w-full max-w-2xl min-h-full shadow-md rounded-md overflow-hidden">
+                <iframe 
+                  srcDoc={previewEmailTemplate} 
+                  title="email-preview-fullscreen"
+                  className="w-full h-full border-0 min-h-[600px]"
+                  sandbox="allow-same-origin"
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}

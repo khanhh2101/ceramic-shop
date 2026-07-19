@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { blogApi } from './api/blogApi';
+import { useBlogs } from '@/pages/Customer/Blog/hooks/useBlogs';
 
 import BlogHero from './components/BlogHero';
 import PinnedBlogs from './components/PinnedBlogs';
@@ -16,7 +16,6 @@ export default function BlogPage() {
     
     const [allBlogs, setAllBlogs] = useState([]);
     const [filteredBlogs, setFilteredBlogs] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [searchInput, setSearchInput] = useState(searchQuery);
 
     useEffect(() => {
@@ -30,32 +29,24 @@ export default function BlogPage() {
         metaDescription.content = "Đọc các bài viết mới nhất về nghệ thuật làm gốm, cách bảo quản gốm sứ và xu hướng trang trí nội thất phong cách tối giản từ Gốm Nâu.";
     }, []);
 
+    const { data: blogsData, isLoading: loading } = useBlogs({ pageSize: 1000 });
+    
     useEffect(() => {
-        const fetchBlogs = async () => {
-            try {
-                const response = await blogApi.getArticles();
-                const dataList = Array.isArray(response) ? response : (response?.items || response?.data || []);
-                const rawBlogs = dataList.map((article) => ({
-                    id: article.id,
-                    slug: article.slug,
-                    title: article.title,
-                    excerpt: article.metaDescription || article.title,
-                    thumbnailUrl: article.thumbnailUrl || 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=800&auto=format&fit=crop',
-                    createdAt: article.createdAt,
-                    category: article.categoryName || 'Tạp chí',
-                    isPinned: article.isPinned,
-                    tags: article.tags || []
-                }));
-                setAllBlogs(rawBlogs);
-            } catch (error) {
-                console.error("Lỗi fetch blog:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchBlogs();
-    }, []);
+        if (blogsData?.items) {
+            const rawBlogs = blogsData.items.map((article) => ({
+                id: article.id,
+                slug: article.slug,
+                title: article.title,
+                excerpt: article.metaDescription || article.title,
+                thumbnailUrl: article.thumbnailUrl || 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=800&auto=format&fit=crop',
+                createdAt: article.createdAt,
+                category: article.categoryName || 'Tạp chí',
+                isPinned: article.isPinned,
+                tags: article.tags || []
+            }));
+            setAllBlogs(rawBlogs);
+        }
+    }, [blogsData]);
 
     // Filter Effect
     useEffect(() => {

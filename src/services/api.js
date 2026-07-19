@@ -58,6 +58,13 @@ api.interceptors.response.use(
 
     // Nếu 401 (Unauthorized) và chưa retry lần nào
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Bỏ qua logic refresh token nếu đây là request đăng nhập/đăng ký
+      if (originalRequest.url.includes('/auth/login') || 
+          originalRequest.url.includes('/auth/admin-login') || 
+          originalRequest.url.includes('/auth/register')) {
+        return Promise.reject(error);
+      }
+
       // Nếu đang refresh → đưa request vào queue chờ
       if (isRefreshing) {
         return new Promise((resolve, reject) => {

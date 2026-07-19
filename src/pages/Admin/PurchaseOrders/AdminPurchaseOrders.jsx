@@ -12,11 +12,10 @@ export default function AdminPurchaseOrders() {
   const handleSuccess = () => {
     setIsModalOpen(false);
     setRefreshKey(prev => prev + 1); // Thay đổi key để remount component List, ép fetch lại data
-    queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+    queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
     queryClient.invalidateQueries({ queryKey: ['products'] });
-    queryClient.invalidateQueries({ queryKey: ['lowStock'] });
-    queryClient.invalidateQueries({ queryKey: ['ledger'] });
-    queryClient.invalidateQueries({ queryKey: ['adminPurchaseOrders'] });
+    queryClient.invalidateQueries({ queryKey: ['admin', 'inventory'] });
+    queryClient.invalidateQueries({ queryKey: ['admin', 'purchaseorders'] });
   };
 
   return (

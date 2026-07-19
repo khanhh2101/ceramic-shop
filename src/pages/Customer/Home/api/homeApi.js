@@ -9,4 +9,7 @@ export const homeApi = {
   
   // Lấy các cấu hình hiển thị nội dung động trên Home (Hero slider, Promo Banner)
   getHomeContent: () => api.get('/settings/home'),
+
+  // Lấy danh sách timeline
+  getTimeline: () => api.get('/settings/about/timeline'),
 };

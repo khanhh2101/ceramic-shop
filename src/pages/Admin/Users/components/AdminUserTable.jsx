@@ -1,17 +1,16 @@
 import React, { useMemo } from 'react';
 import { FiUser, FiMail, FiCalendar, FiShoppingBag, FiEdit2, FiTrash2, FiShield, FiLock, FiUnlock } from 'react-icons/fi';
 import ActionIconButton from '@/components/common/ActionIconButton';
-import DataTable from '@/components/common/DataTable';
+import AntTable from '@/components/common/AntTable';
 
 export default function AdminUserTable({ filteredUsers, loading, handleOpenEdit, handleOpenDelete, formatDate }) {
     
     const columns = useMemo(() => [
         {
-            headerName: 'Người dùng',
-            field: 'user',
-            flex: 1,
-            minWidth: '250px',
-            cellRenderer: (user) => (
+            title: 'Người dùng',
+            key: 'user',
+            width: 250,
+            render: (_, user) => (
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center flex-shrink-0">
                         {user.avatarUrl ? (
@@ -38,11 +37,11 @@ export default function AdminUserTable({ filteredUsers, loading, handleOpenEdit,
             )
         },
         {
-            headerName: 'Vai trò',
-            field: 'role',
-            width: '150px',
-            cellRenderer: (user) => (
-                user.role === 'Admin' ? (
+            title: 'Vai trò',
+            dataIndex: 'role',
+            width: 150,
+            render: (role) => (
+                role === 'Admin' ? (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-100">
                         <FiShield size={12} /> Quản trị viên
                     </span>
@@ -51,13 +50,18 @@ export default function AdminUserTable({ filteredUsers, loading, handleOpenEdit,
                         <FiUser size={12} /> Khách hàng
                     </span>
                 )
-            )
+            ),
+            filters: [
+                { text: 'Quản trị viên', value: 'Admin' },
+                { text: 'Khách hàng', value: 'Customer' }
+            ],
+            onFilter: (value, record) => record.role === value
         },
         {
-            headerName: 'Trạng thái',
-            field: 'status',
-            width: '150px',
-            cellRenderer: (user) => (
+            title: 'Trạng thái',
+            key: 'status',
+            width: 150,
+            render: (_, user) => (
                 user.isLocked ? (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
                         <FiLock size={12} /> Đã khóa
@@ -67,36 +71,44 @@ export default function AdminUserTable({ filteredUsers, loading, handleOpenEdit,
                         <FiUnlock size={12} /> Hoạt động
                     </span>
                 )
-            )
+            ),
+            filters: [
+                { text: 'Hoạt động', value: false },
+                { text: 'Đã khóa', value: true }
+            ],
+            onFilter: (value, record) => record.isLocked === value
         },
         {
-            headerName: 'Ngày tham gia',
-            field: 'createdAt',
-            width: '150px',
-            cellRenderer: (user) => (
+            title: 'Ngày tham gia',
+            dataIndex: 'createdAt',
+            width: 150,
+            render: (createdAt) => (
                 <div className="flex items-center gap-1.5 text-sm text-gray-500">
                     <FiCalendar size={14} />
-                    {formatDate(user.createdAt)}
+                    {formatDate(createdAt)}
                 </div>
-            )
+            ),
+            sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
         },
         {
-            headerName: 'Đã mua',
-            field: 'orderCount',
-            width: '120px',
-            headerClassName: 'justify-center text-center',
-            cellRenderer: (user) => (
+            title: 'Đã mua',
+            dataIndex: 'orderCount',
+            width: 120,
+            align: 'center',
+            render: (orderCount) => (
                 <div className="flex items-center justify-center gap-1.5 text-sm font-semibold text-gray-900">
                     <FiShoppingBag className="text-gray-400" size={14} />
-                    {user.orderCount} <span className="text-xs font-normal text-gray-500">đơn</span>
+                    {orderCount} <span className="text-xs font-normal text-gray-500">đơn</span>
                 </div>
-            )
+            ),
+            sorter: (a, b) => a.orderCount - b.orderCount
         },
         {
-            headerName: 'Thao tác',
-            width: '100px',
-            headerClassName: 'justify-end text-right pr-0',
-            cellRenderer: (user) => (
+            title: 'Thao tác',
+            key: 'action',
+            width: 100,
+            align: 'right',
+            render: (_, user) => (
                 <div className="flex items-center justify-end gap-1">
                     <ActionIconButton
                         icon={FiEdit2}
@@ -115,11 +127,14 @@ export default function AdminUserTable({ filteredUsers, loading, handleOpenEdit,
     ], [handleOpenEdit, handleOpenDelete, formatDate]);
 
     return (
-        <DataTable 
-            columns={columns}
-            data={filteredUsers}
-            loading={loading}
-            emptyMessage="Không tìm thấy người dùng nào"
-        />
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+            <AntTable 
+                columns={columns}
+                dataSource={filteredUsers}
+                loading={loading}
+                emptyMessage="Không tìm thấy người dùng nào"
+                pagination={false}
+            />
+        </div>
     );
 }

@@ -1,20 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSmartFilter } from '@/hooks/useSmartFilter';
 import { FiSearch, FiFilter, FiRefreshCw } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import api from '@/services/api';
 import { adminOrderApi } from './api/adminOrderApi';
 import AdminOrderTable from './components/AdminOrderTable';
 import AdminOrderModal from './components/AdminOrderModal';
 import Pagination from '@/components/common/Pagination';
 import { formatCurrency, formatDateTime } from '@/utils';
 import { getErrorMessage } from '@/utils';
+import { useAdminOrders } from '@/pages/Admin/Orders/hooks/useAdminOrders';
+import { useAdminGeneralCodes } from '@/pages/Admin/Orders/hooks/useAdminMasterData';
 
 export default function AdminOrders() {
     const queryClient = useQueryClient();
-    const [masterStatuses, setMasterStatuses] = useState([]);
 
     const {
         pageIndex, pageSize, searchTerm, searchInput, setSearchInput,
@@ -43,48 +43,24 @@ export default function AdminOrders() {
         }
     }, [location.search]);
 
-    useEffect(() => {
-        const fetchMasterData = async () => {
-            try {
-                const res = await adminOrderApi.getMasterStatuses();
-                setMasterStatuses(Array.isArray(res) ? res : (res?.data || res?.items || []));
-            } catch (err) {
-                console.error('Failed to load order statuses', err);
-            }
-        };
-        fetchMasterData();
-    }, []);
+    const { data: masterStatuses = [] } = useAdminGeneralCodes('ORDER_STATUS');
 
     const invalidateOrderCaches = () => {
-        queryClient.invalidateQueries({ queryKey: ['adminOrders'] });
+        queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] });
         queryClient.invalidateQueries({ queryKey: ['orders'] });
-        queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+        queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
         queryClient.invalidateQueries({ queryKey: ['products'] });
-        queryClient.invalidateQueries({ queryKey: ['lowStock'] });
-        queryClient.invalidateQueries({ queryKey: ['ledger'] });
+        window.dispatchEvent(new Event('refreshNotifications'));
     };
 
     // React Query for Orders
-    const { data: ordersData, isLoading: loading } = useQuery({
-        queryKey: ['adminOrders', { searchTerm, statusFilter, pageIndex, pageSize }],
-        queryFn: async () => {
-            const params = { 
-                pageIndex, 
-                pageSize,
-                sortBy: 'createdAt',
-                sortDesc: true
-            };
-            if (statusFilter !== '') params.statusId = statusFilter;
-            if (searchTerm.trim() !== '') params.search = searchTerm.trim();
-            
-            const res = await adminOrderApi.getOrders(params);
-            return {
-                items: Array.isArray(res) ? res : (res?.data || res?.items || []),
-                totalPages: res?.totalPages || 1,
-                totalCount: res?.totalCount || 0
-            };
-        },
-        placeholderData: keepPreviousData
+    const { data: ordersData, isLoading: loading } = useAdminOrders({
+        pageIndex, 
+        pageSize,
+        sortBy: 'createdAt',
+        sortDesc: true,
+        statusId: statusFilter !== '' ? statusFilter : undefined,
+        search: searchTerm.trim() !== '' ? searchTerm.trim() : undefined
     });
 
     const orders = ordersData?.items || [];

@@ -2,15 +2,15 @@ import React, { useMemo } from 'react';
 import { FiStar, FiCheckCircle, FiTrash2, FiEyeOff } from 'react-icons/fi';
 import StatusBadge from '@/components/common/StatusBadge';
 import ActionIconButton from '@/components/common/ActionIconButton';
-import DataTable from '@/components/common/DataTable';
+import AntTable from '@/components/common/AntTable';
 
 export default function ReviewTable({ reviews, filteredReviews, loading, openConfirm }) {
     const columns = useMemo(() => [
         {
-            headerName: 'Khách hàng',
-            field: 'customer',
-            width: '250px',
-            cellRenderer: (review) => (
+            title: 'Khách hàng',
+            key: 'customer',
+            width: 250,
+            render: (_, review) => (
                 <div className="flex items-center gap-3">
                     <img 
                         src={review.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(review.userName)}`} 
@@ -22,22 +22,21 @@ export default function ReviewTable({ reviews, filteredReviews, loading, openCon
                         <p className="text-xs text-gray-500">{new Date(review.createdAt).toLocaleDateString('vi-VN')}</p>
                     </div>
                 </div>
-            )
+            ),
+            sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
         },
         {
-            headerName: 'Đánh giá',
-            field: 'review',
-            flex: 1,
-            minWidth: '300px',
-            cellRenderer: (review) => (
+            title: 'Đánh giá',
+            key: 'review',
+            width: 300,
+            render: (_, review) => (
                 <div className="max-w-xs py-2">
                     <div className="flex text-yellow-400 mb-1">
                         {[...Array(5)].map((_, i) => (
                             <FiStar key={i} className={i < review.stars ? 'fill-current' : 'text-gray-300'} size={14} />
                         ))}
                     </div>
-                    <p className="text-sm font-semibold text-gray-900">{review.title}</p>
-                    <p className="text-sm text-gray-600 line-clamp-2 mt-0.5">{review.content}</p>
+                    <p className="text-sm text-gray-800 line-clamp-3 mt-0.5">{review.content}</p>
                     {review.imageUrls?.length > 0 && (
                         <div className="flex gap-1 mt-2">
                             {review.imageUrls.map((img, i) => (
@@ -46,13 +45,22 @@ export default function ReviewTable({ reviews, filteredReviews, loading, openCon
                         </div>
                     )}
                 </div>
-            )
+            ),
+            sorter: (a, b) => a.stars - b.stars,
+            filters: [
+                { text: '5 Sao', value: 5 },
+                { text: '4 Sao', value: 4 },
+                { text: '3 Sao', value: 3 },
+                { text: '2 Sao', value: 2 },
+                { text: '1 Sao', value: 1 }
+            ],
+            onFilter: (value, record) => record.stars === value
         },
         {
-            headerName: 'Sản phẩm (ID)',
-            field: 'product',
-            width: '250px',
-            cellRenderer: (review) => (
+            title: 'Sản phẩm (ID)',
+            key: 'product',
+            width: 250,
+            render: (_, review) => (
                 review.productName ? (
                     <div className="flex items-center gap-3">
                         {review.productImageUrl && (
@@ -76,52 +84,59 @@ export default function ReviewTable({ reviews, filteredReviews, loading, openCon
             )
         },
         {
-            headerName: 'Trạng thái',
-            field: 'status',
-            width: '150px',
-            cellRenderer: (review) => (
+            title: 'Trạng thái',
+            key: 'status',
+            width: 150,
+            render: (_, review) => (
                 <StatusBadge 
                     status={review.isHidden} 
                     type="visibility" 
-                    textOverrides={{ true: 'Chờ duyệt', false: 'Đã duyệt' }} 
+                    textOverrides={{ true: 'Chờ phê duyệt', false: 'Đã phê duyệt' }} 
                 />
-            )
+            ),
+            filters: [
+                { text: 'Đã duyệt', value: false },
+                { text: 'Chờ duyệt (Ẩn)', value: true }
+            ],
+            onFilter: (value, record) => record.isHidden === value
         },
         {
-            headerName: 'Thao Tác',
-            width: '150px',
-            headerClassName: 'justify-end text-right pr-0',
-            cellRenderer: (review) => (
+            title: 'Thao Tác',
+            key: 'action',
+            width: 150,
+            align: 'right',
+            fixed: 'right',
+            render: (_, review) => (
                 <div className="flex items-center justify-end gap-1">
                     {review.isHidden ? (
                         <>
-                            <ActionIconButton 
-                                icon={FiCheckCircle} 
-                                variant="toggle-on" 
+                            <button 
                                 onClick={() => openConfirm(review.id, 'TOGGLE', review.isHidden)} 
-                                title="Phê duyệt đánh giá"
-                            />
-                            <ActionIconButton 
-                                icon={FiTrash2} 
-                                variant="delete" 
-                                onClick={() => openConfirm(review.id, 'DELETE')} 
-                                title="Không phê duyệt (Xóa)"
-                            />
+                                className="px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-xs font-bold flex items-center gap-1.5 border border-green-200 shadow-sm transition-colors whitespace-nowrap"
+                            >
+                                <FiCheckCircle size={14} /> Phê duyệt
+                            </button>
+                            <button 
+                                onClick={() => openConfirm(review.id, 'DELETE', review.isHidden)} 
+                                className="px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg text-xs font-bold flex items-center gap-1.5 border border-red-200 shadow-sm transition-colors whitespace-nowrap"
+                            >
+                                <FiTrash2 size={14} /> Từ chối
+                            </button>
                         </>
                     ) : (
                         <>
-                            <ActionIconButton 
-                                icon={FiEyeOff} 
-                                variant="toggle-off" 
+                            <button 
                                 onClick={() => openConfirm(review.id, 'TOGGLE', review.isHidden)} 
-                                title="Ẩn đánh giá"
-                            />
-                            <ActionIconButton 
-                                icon={FiTrash2} 
-                                variant="delete" 
-                                onClick={() => openConfirm(review.id, 'DELETE')} 
-                                title="Xóa đánh giá"
-                            />
+                                className="px-3 py-1.5 bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg text-xs font-bold flex items-center gap-1.5 border border-orange-200 shadow-sm transition-colors whitespace-nowrap"
+                            >
+                                <FiEyeOff size={14} /> Ẩn đi
+                            </button>
+                            <button 
+                                onClick={() => openConfirm(review.id, 'DELETE', review.isHidden)} 
+                                className="px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg text-xs font-bold flex items-center gap-1.5 border border-red-200 shadow-sm transition-colors whitespace-nowrap"
+                            >
+                                <FiTrash2 size={14} /> Xóa
+                            </button>
                         </>
                     )}
                 </div>
@@ -130,12 +145,15 @@ export default function ReviewTable({ reviews, filteredReviews, loading, openCon
     ], [openConfirm]);
 
     return (
-        <DataTable 
-            columns={columns}
-            data={filteredReviews}
-            loading={loading}
-            emptyMessage="Không có đánh giá nào"
-            rowClassName={(row) => (row.isHidden ? 'opacity-50 bg-gray-50' : '')}
-        />
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+            <AntTable 
+                columns={columns}
+                dataSource={filteredReviews}
+                loading={loading}
+                emptyMessage="Không có đánh giá nào"
+                pagination={false}
+                rowClassName={(record) => (record.isHidden ? 'opacity-50 bg-gray-50' : '')}
+            />
+        </div>
     );
 }

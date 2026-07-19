@@ -226,14 +226,10 @@ export default function AdminTabs() {
   if (tabs.length === 0) return null;
 
   return (
-    <div className="flex items-end bg-[#f8fafc] pt-1.5 pr-2 relative z-0 h-14 border-b border-gray-200">
-      <div className="flex items-center justify-center px-2 mb-[6px]">
-        <SidebarTrigger className="text-gray-500 hover:text-foreground hover:bg-gray-200 transition-colors w-7 h-7" />
-      </div>
-
+    <div className="flex items-end bg-[#f8fafc] pt-1 pr-2 relative z-0 h-11 border-b border-gray-200">
       <button 
         onClick={scrollLeft}
-        className="p-1 text-gray-500 hover:text-gray-900 hover:bg-gray-200 focus:outline-none flex-shrink-0 rounded-md mb-0.5 ml-1 mr-0.5 relative z-20"
+        className="p-0.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 focus:outline-none flex-shrink-0 rounded-md mb-0.5 ml-1 mr-0.5 relative z-20"
       >
         <ChevronLeft size={16} />
       </button>
@@ -263,7 +259,7 @@ export default function AdminTabs() {
                 if (e.button === 1 && tab.id !== '/admin') handleRemoveTab(e, tab); 
               }}
               className={`
-                group flex items-center justify-between gap-1.5 px-3 py-[9px] min-w-[130px] max-w-[210px] cursor-pointer select-none transition-all mr-0.5
+                group flex items-center justify-between gap-1.5 px-3 py-[7px] min-w-[120px] max-w-[200px] cursor-pointer select-none transition-all mr-0.5
                 relative border-transparent
                 ${isActive 
                   ? 'text-primary font-bold z-20' 

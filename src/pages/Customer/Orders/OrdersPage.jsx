@@ -1,31 +1,11 @@
-import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { orderApi } from './api/orderApi';
+import { useMyOrders } from '@/pages/Customer/Orders/hooks/useOrdersQueries';
 import { FiPackage, FiClock, FiCheckCircle, FiXCircle } from 'react-icons/fi';
 import './Orders.css';
-import { getErrorMessage } from '@/utils';
 
 export default function OrdersPage() {
-    const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const navigate = useNavigate();
-
-    useEffect(() => {
-        fetchOrders();
-    }, []);
-
-    const fetchOrders = async () => {
-        setLoading(true);
-        try {
-            const res = await orderApi.getMyOrders();
-            setOrders(res?.data || []);
-        } catch (err) {
-            setError(getErrorMessage(err, 'Không thể tải danh sách đơn hàng'));
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { data: orders = [], isLoading: loading, error } = useMyOrders();
 
     const getStatusInfo = (status) => {
         switch (status?.toLowerCase()) {
@@ -58,10 +38,17 @@ export default function OrdersPage() {
             </div>
 
             <div className="orders-container">
+                <div className="mb-6">
+                    <Link to="/profile" className="inline-flex items-center gap-2 text-[#c4a882] hover:text-[#1a1a1a] transition-colors font-medium text-[14px]">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                        Trở về trang cá nhân
+                    </Link>
+                </div>
+
                 {loading ? (
                     <div className="text-center py-20 text-[#888]">Đang tải danh sách đơn hàng...</div>
                 ) : error ? (
-                    <div className="text-center py-20 text-[#e53e3e]">{error}</div>
+                    <div className="text-center py-20 text-[#e53e3e]">{error?.message || 'Có lỗi xảy ra'}</div>
                 ) : orders.length === 0 ? (
                     <div className="orders-empty-card">
                         <div className="orders-empty-icon">

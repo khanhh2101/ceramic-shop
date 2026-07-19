@@ -1,8 +1,18 @@
+import { useState } from 'react';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+
 export default function OrderSummary({
     cartItems,
     cartTotal,
     shippingFee,
-    discountAmount,
+    orderDiscountAmount,
+    shippingDiscountAmount,
     grandTotal,
     isSubmitting,
     couponCode,
@@ -10,8 +20,11 @@ export default function OrderSummary({
     appliedCoupon,
     isApplyingCoupon,
     onApplyCoupon,
-    onRemoveCoupon
+    onRemoveCoupon,
+    publicCoupons = []
 }) {
+    const [isManualInput, setIsManualInput] = useState(publicCoupons.length === 0);
+
     return (
         <div className="bg-[#eee8df] p-8 sticky top-6 shadow-sm">
             <h3 className="text-[22px] mb-5 text-[#1a1a1a] pb-4 border-b border-[#d8d0c4] font-display">
@@ -33,8 +46,8 @@ export default function OrderSummary({
                                 {item.productName}
                             </p>
                             <div className="text-[11px] text-[#888] mb-1 flex items-center gap-1.5 flex-wrap">
-                                {item.productCode && <span>SKU: {item.productCode}</span>}
-                                {item.productCode && item.color && <span>|</span>}
+                                {item.sku ? <span>SKU: {item.sku}</span> : (item.productCode && <span>SKU: {item.productCode}</span>)}
+                                {(item.sku || item.productCode) && item.color && <span>|</span>}
                                 {item.color && <span>Màu: <span className="capitalize">{item.color}</span></span>}
                             </div>
                             <p className="text-[12px] text-[#888]">Số lượng: {item.quantity}</p>
@@ -50,14 +63,71 @@ export default function OrderSummary({
                 {/* ── MÃ GIẢM GIÁ ── */}
                 <div className="mb-4">
                     <div className="flex gap-2">
-                        <input 
-                            type="text" 
-                            placeholder="Mã giảm giá" 
-                            value={couponCode}
-                            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                            disabled={!!appliedCoupon || isApplyingCoupon}
-                            className="flex-1 border border-[#d8d0c4] px-3 py-2 text-[13px] bg-white outline-none focus:border-[#b5624a] disabled:bg-gray-100 disabled:text-gray-500 uppercase"
-                        />
+                        {(!isManualInput && publicCoupons.length > 0) ? (
+                            <div className="flex-1">
+                                <Select
+                                    value={couponCode}
+                                    onValueChange={(val) => {
+                                        if (val === 'MANUAL') {
+                                            setIsManualInput(true);
+                                            setCouponCode('');
+                                        } else {
+                                            setCouponCode(val);
+                                        }
+                                    }}
+                                    disabled={!!appliedCoupon || isApplyingCoupon}
+                                >
+                                    <SelectTrigger className="w-full bg-white border border-[#d8d0c4] text-gray-900 text-[13px] rounded-none py-2 h-[38px] outline-none shadow-none uppercase">
+                                        <SelectValue placeholder="Chọn mã giảm giá..." />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-white rounded-none border-[#d8d0c4]">
+                                        {publicCoupons.map(coupon => {
+                                            const isEligible = cartTotal >= coupon.minOrderAmount;
+                                            return (
+                                                <SelectItem 
+                                                    key={coupon.id} 
+                                                    value={coupon.code} 
+                                                    disabled={!isEligible}
+                                                    className="text-[13px] uppercase"
+                                                >
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span>{coupon.code} - {coupon.isShippingDiscount ? 'Ship' : 'Đơn'} {coupon.type === 0 ? `-${coupon.value}%` : `-${coupon.value.toLocaleString('vi-VN')}đ`}</span>
+                                                        {!isEligible && (
+                                                            <span className="text-[10px] text-red-500 normal-case">
+                                                                (Đơn tối thiểu {coupon.minOrderAmount.toLocaleString('vi-VN')}đ)
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </SelectItem>
+                                            );
+                                        })}
+                                        <SelectItem value="MANUAL" className="text-[13px] font-medium text-[#b5624a]">
+                                            + NHẬP MÃ KHÁC...
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        ) : (
+                            <div className="flex-1 flex gap-2 relative">
+                                <input 
+                                    type="text" 
+                                    placeholder="Nhập mã giảm giá..." 
+                                    value={couponCode}
+                                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                    disabled={!!appliedCoupon || isApplyingCoupon}
+                                    className="flex-1 border border-[#d8d0c4] px-3 py-2 text-[13px] bg-white outline-none focus:border-[#b5624a] disabled:bg-gray-100 disabled:text-gray-500 uppercase w-full"
+                                />
+                                {publicCoupons.length > 0 && !appliedCoupon && (
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setIsManualInput(false)}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500 hover:text-[#b5624a] underline"
+                                    >
+                                        Chọn mã
+                                    </button>
+                                )}
+                            </div>
+                        )}
                         {appliedCoupon ? (
                             <button 
                                 type="button"
@@ -79,6 +149,7 @@ export default function OrderSummary({
                     </div>
                 </div>
 
+
                 <div className="flex justify-between py-2 text-[14px] text-[#555]">
                     <span>Tạm tính</span>
                     <span>{cartTotal.toLocaleString('vi-VN')} ₫</span>
@@ -88,10 +159,16 @@ export default function OrderSummary({
                     <span>{shippingFee === 0 ? 'Miễn phí' : `${shippingFee.toLocaleString('vi-VN')} ₫`}</span>
                 </div>
                 
-                {appliedCoupon && (
-                    <div className="flex justify-between py-2 text-[14px] text-green-600 border-b border-[#d8d0c4] pb-4">
+                {appliedCoupon && orderDiscountAmount > 0 && (
+                    <div className="flex justify-between py-2 text-[14px] text-green-600 border-b border-[#d8d0c4] pb-2">
                         <span>Giảm giá (Mã: {appliedCoupon})</span>
-                        <span>-{discountAmount.toLocaleString('vi-VN')} ₫</span>
+                        <span>-{orderDiscountAmount.toLocaleString('vi-VN')} ₫</span>
+                    </div>
+                )}
+                {appliedCoupon && shippingDiscountAmount > 0 && (
+                    <div className="flex justify-between py-2 text-[14px] text-green-600 border-b border-[#d8d0c4] pb-2">
+                        <span>Giảm phí vận chuyển (Mã: {appliedCoupon})</span>
+                        <span>-{shippingDiscountAmount.toLocaleString('vi-VN')} ₫</span>
                     </div>
                 )}
                 

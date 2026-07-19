@@ -89,7 +89,12 @@ export default function AdminOrderModal({
                                                         <img src={getImageUrl(item.productImageUrl)} alt={item.productName} className="w-20 h-20 rounded-lg object-cover border border-gray-200 shadow-sm" />
                                                     </a>
                                                     <div className="flex-1">
-                                                        <p className="font-bold text-gray-900 text-base">{item.productName} {item.productCode && <span className="text-gray-500 font-normal ml-1">({item.productCode})</span>}</p>
+                                                        <p className="font-bold text-gray-900 text-base">
+                                                            {item.productName} 
+                                                            {(item.sku || item.productCode) && (
+                                                                <span className="text-gray-500 font-normal ml-1">({item.sku || item.productCode})</span>
+                                                            )}
+                                                        </p>
                                                         {item.color && <p className="text-sm text-gray-500 mt-1">Màu: {item.color}</p>}
                                                     </div>
                                                 </div>
@@ -120,7 +125,7 @@ export default function AdminOrderModal({
                                         </div>
                                         {selectedOrder.discount > 0 && (
                                             <div className="flex justify-between mb-2">
-                                                <span className="text-gray-500">Giảm giá:</span>
+                                                <span className="text-gray-500">Giảm giá{selectedOrder.couponCode ? ` (Mã: ${selectedOrder.couponCode})` : ''}:</span>
                                                 <span className="font-medium text-green-600">-{formatCurrency(selectedOrder.discount)}</span>
                                             </div>
                                         )}

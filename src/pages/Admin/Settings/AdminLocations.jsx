@@ -15,9 +15,7 @@ export default function AdminLocations() {
   const [districtsData, setDistrictsData] = useState({}); // { provinceCode: [districts] }
   const [wardsData, setWardsData] = useState({}); // { parentCode: [wards] }
 
-  // editingTarget: { type: 'province'|'district'|'ward', code, parentCode? }
-  const [editingTarget, setEditingTarget] = useState(null);
-  const [editForm, setEditForm] = useState({ shippingFee: '', zipCode: '' });
+
 
   const [isNewStructure, setIsNewStructure] = useState(false);
 
@@ -41,8 +39,8 @@ export default function AdminLocations() {
   };
 
   const handleSync = async (useNewStructure) => {
-    const structName = useNewStructure ? 'Cấu trúc mới (Sau 1/7/2025)' : 'Cấu trúc cũ (Trước 1/7/2025)';
-    if (!window.confirm(`Quá trình đồng bộ sẽ xóa dữ liệu hiện tại và tải lại từ tinhthanhpho.com theo ${structName}. Chú ý: Quá trình này có thể mất 1-2 phút. Bạn chắc chắn?`)) return;
+    const structName = useNewStructure ? 'Cấu trúc mới (Từ 07/2025)' : 'Cấu trúc cũ (Trước 07/2025)';
+    if (!window.confirm(`Quá trình đồng bộ sẽ xóa dữ liệu hiện tại và tải lại từ open-api.vn theo ${structName}. Chú ý: Quá trình này có thể mất 1-2 phút. Bạn chắc chắn?`)) return;
     
     try {
       setSyncing(true);
@@ -65,12 +63,12 @@ export default function AdminLocations() {
         if (!isNewStructure) {
           if (!districtsData[code]) {
             const res = await adminLocationApi.getDistricts(code, false);
-            setDistrictsData(prev => ({ ...prev, [code]: res }));
+            setDistrictsData(prev => ({ ...prev, [code]: Array.isArray(res) ? res : (res?.data || []) }));
           }
         } else {
           if (!wardsData[code]) {
             const res = await adminLocationApi.getWards(code, true);
-            setWardsData(prev => ({ ...prev, [code]: res }));
+            setWardsData(prev => ({ ...prev, [code]: Array.isArray(res) ? res : (res?.data || []) }));
           }
         }
       } catch (e) {
@@ -86,65 +84,21 @@ export default function AdminLocations() {
     if (!isExpanded && !wardsData[districtCode]) {
       try {
         const res = await adminLocationApi.getWards(districtCode, false);
-        setWardsData(prev => ({ ...prev, [districtCode]: res }));
+        setWardsData(prev => ({ ...prev, [districtCode]: Array.isArray(res) ? res : (res?.data || []) }));
       } catch (e) {
         toast.error('Lỗi khi tải Phường/Xã');
       }
     }
   };
 
-  const startEdit = (item, type, parentCode = null) => {
-    setEditingTarget({ type, code: item.code, parentCode });
-    setEditForm({
-      shippingFee: item.shippingFee !== null ? item.shippingFee : '',
-      zipCode: item.zipCode || ''
-    });
-  };
 
-  const cancelEdit = () => {
-    setEditingTarget(null);
-  };
-
-  const saveEdit = async () => {
-    try {
-      const payload = {
-        shippingFee: editForm.shippingFee === '' ? null : Number(editForm.shippingFee)
-      };
-
-      if (editingTarget.type === 'province') {
-        payload.zipCode = editForm.zipCode;
-        await adminLocationApi.updateProvince(editingTarget.code, isNewStructure, payload);
-        setProvinces(provinces.map(p => p.code === editingTarget.code ? { ...p, shippingFee: payload.shippingFee, zipCode: payload.zipCode } : p));
-      } else if (editingTarget.type === 'district') {
-        await adminLocationApi.updateDistrict(editingTarget.code, isNewStructure, payload);
-        const parent = editingTarget.parentCode;
-        setDistrictsData(prev => ({
-          ...prev,
-          [parent]: prev[parent].map(d => d.code === editingTarget.code ? { ...d, shippingFee: payload.shippingFee } : d)
-        }));
-      } else if (editingTarget.type === 'ward') {
-        await adminLocationApi.updateWard(editingTarget.code, isNewStructure, payload);
-        const parent = editingTarget.parentCode;
-        setWardsData(prev => ({
-          ...prev,
-          [parent]: prev[parent].map(w => w.code === editingTarget.code ? { ...w, shippingFee: payload.shippingFee } : w)
-        }));
-      }
-
-      toast.success('Cập nhật thành công!');
-      setEditingTarget(null);
-    } catch (err) {
-      toast.error('Lỗi khi cập nhật');
-    }
-  };
 
   const filteredProvinces = provinces.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     (p.zipCode && p.zipCode.includes(searchTerm))
   );
 
-  const renderRow = (item, type, parentCode = null, depth = 0, fallbackFee = 0) => {
-    const isEditing = editingTarget?.type === type && editingTarget?.code === item.code;
+  const renderRow = (item, type, parentCode = null, depth = 0) => {
     const paddingLeft = depth * 32 + 24; // 24px base padding
     const hasChildren = type === 'province' || (type === 'district' && !isNewStructure);
     
@@ -158,10 +112,6 @@ export default function AdminLocations() {
       isExpanded = expandedDistricts[item.code];
       toggleFunc = () => toggleDistrict(item.code);
     }
-
-    const currentFee = item.shippingFee !== null && item.shippingFee !== undefined ? item.shippingFee : null;
-    const displayFee = currentFee !== null ? currentFee : fallbackFee;
-    const isInherited = currentFee === null;
 
     return (
       <div key={`${type}-${item.code}`} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${type === 'province' ? 'bg-white' : (type === 'district' ? 'bg-gray-50/50' : 'bg-gray-100/30')}`}>
@@ -181,83 +131,23 @@ export default function AdminLocations() {
               </div>
             </div>
           </div>
-
-          <div className="flex items-center gap-8 w-[400px] justify-end">
-            {/* ZIP CODE (only province) */}
-            {type === 'province' && (
-              <div className="w-24">
-                {isEditing ? (
-                  <input 
-                    type="text" 
-                    value={editForm.zipCode} 
-                    onChange={e => setEditForm({...editForm, zipCode: e.target.value})}
-                    className="w-full bg-white border border-[#b5624a] text-gray-900 text-sm rounded py-1 px-2 outline-none"
-                    placeholder="Zip Code"
-                  />
-                ) : (
-                  <span className="font-mono text-sm text-gray-500">{item.zipCode || '—'}</span>
-                )}
-              </div>
-            )}
-
-            {/* SHIPPING FEE */}
-            <div className="w-40 text-right">
-              {isEditing ? (
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="number" 
-                    value={editForm.shippingFee} 
-                    onChange={e => setEditForm({...editForm, shippingFee: e.target.value})}
-                    className="w-full bg-white border border-[#b5624a] text-gray-900 text-sm rounded py-1 px-2 outline-none text-right"
-                    placeholder="Để trống = Mặc định"
-                  />
-                </div>
-              ) : (
-                <div className="flex flex-col items-end">
-                  <span className={`text-sm font-semibold ${isInherited ? 'text-gray-400' : 'text-[#b5624a]'}`}>
-                    {displayFee.toLocaleString('vi-VN')} đ
-                  </span>
-                  {isInherited && <span className="text-[10px] text-gray-400">(Kế thừa)</span>}
-                </div>
-              )}
-            </div>
-
-            {/* ACTIONS */}
-            <div className="w-16 flex justify-end">
-              {isEditing ? (
-                <div className="flex gap-1">
-                  <button onClick={saveEdit} className="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Lưu">
-                    <FiCheck size={16} />
-                  </button>
-                  <button onClick={cancelEdit} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Hủy">
-                    <FiX size={16} />
-                  </button>
-                </div>
-              ) : (
-                <button onClick={() => startEdit(item, type, parentCode)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="Sửa">
-                  <FiEdit2 size={16} />
-                </button>
-              )}
-            </div>
-          </div>
         </div>
-
         {/* RENDER CHILDREN */}
         {isExpanded && type === 'province' && !isNewStructure && districtsData[item.code] && (
           <div className="border-t border-gray-100">
-            {districtsData[item.code].map(d => renderRow(d, 'district', item.code, depth + 1, displayFee))}
+            {districtsData[item.code].map(d => renderRow(d, 'district', item.code, depth + 1))}
           </div>
         )}
 
         {isExpanded && type === 'province' && isNewStructure && wardsData[item.code] && (
           <div className="border-t border-gray-100">
-            {wardsData[item.code].map(w => renderRow(w, 'ward', item.code, depth + 1, displayFee))}
+            {wardsData[item.code].map(w => renderRow(w, 'ward', item.code, depth + 1))}
           </div>
         )}
 
         {isExpanded && type === 'district' && wardsData[item.code] && (
           <div className="border-t border-gray-100">
-            {wardsData[item.code].map(w => renderRow(w, 'ward', item.code, depth + 1, displayFee))}
+            {wardsData[item.code].map(w => renderRow(w, 'ward', item.code, depth + 1))}
           </div>
         )}
       </div>
@@ -287,7 +177,7 @@ export default function AdminLocations() {
               Cấu trúc Mới (Từ 1/7/2025)
             </button>
           </div>
-          <p className="text-sm text-gray-500 mt-2">Quản lý cấu trúc địa chỉ dạng Cây. Phí Ship của cấp con nếu bỏ trống sẽ tự động lấy theo cấp cha.</p>
+          <p className="text-sm text-gray-500 mt-2">Quản lý cấu trúc địa chỉ. Phí vận chuyển được cố định là 30.000 VNĐ cho mọi khu vực.</p>
         </div>
         <div className="flex gap-2">
           <button 
@@ -321,14 +211,10 @@ export default function AdminLocations() {
 
       {/* TREE LIST */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between py-3 px-6 bg-gray-50/80 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
-          <div className="flex-1">Tên Đơn vị hành chính</div>
-          <div className="flex items-center gap-8 w-[400px] justify-end">
-            <div className="w-24 text-left">Zip Code</div>
-            <div className="w-40 text-right">Phí giao hàng</div>
-            <div className="w-16 text-right">Thao tác</div>
+          {/* LIST HEADER */}
+          <div className="flex items-center justify-between px-6 py-3 bg-gray-50 border-b border-gray-200">
+            <span className="font-semibold text-gray-600">Tên Khu vực</span>
           </div>
-        </div>
 
         <div className="overflow-y-auto max-h-[65vh]">
           {loading ? (

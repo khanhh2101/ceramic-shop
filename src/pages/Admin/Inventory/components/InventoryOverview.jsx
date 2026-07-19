@@ -1,15 +1,13 @@
 import React, { useMemo } from 'react';
 import { AlertTriangle, Plus } from 'lucide-react';
-import DataTable from '@/components/common/DataTable';
+import { Table } from 'antd';
 
 export default function InventoryOverview({ lowStockProducts, onAdjustClick }) {
     const columns = useMemo(() => [
         {
-            headerName: 'Sản Phẩm',
-            field: 'name',
-            flex: 2,
-            minWidth: '300px',
-            cellRenderer: (p) => (
+            title: 'Sản Phẩm',
+            key: 'name',
+            render: (_, p) => (
                 <div className="flex items-center gap-4 h-full w-full py-1.5">
                     <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex-shrink-0 flex items-center justify-center p-0.5 shadow-sm">
                         <img
@@ -32,20 +30,20 @@ export default function InventoryOverview({ lowStockProducts, onAdjustClick }) {
             )
         },
         {
-            headerName: 'Danh Mục',
-            field: 'categoryName',
-            width: '200px',
-            cellRenderer: (p) => (
+            title: 'Danh Mục',
+            dataIndex: 'categoryName',
+            width: 200,
+            render: (categoryName) => (
                 <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-gray-50 border border-gray-200 text-gray-700">
-                    {p.categoryName || 'Không có'}
+                    {categoryName || 'Không có'}
                 </span>
             )
         },
         {
-            headerName: 'Tồn Kho Hiện Tại',
-            field: 'stockQuantity',
-            width: '160px',
-            cellRenderer: (p) => (
+            title: 'Tồn Kho Hiện Tại',
+            key: 'stockQuantity',
+            width: 160,
+            render: (_, p) => (
                 <div className="flex flex-col justify-center h-full gap-1">
                     <span className={`inline-flex w-fit items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border shadow-sm ${p.stockQuantity === 0 ? 'text-red-700 bg-red-50 border-red-100' : 'text-orange-700 bg-orange-50 border-orange-100'}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${p.stockQuantity === 0 ? 'bg-red-500 animate-pulse' : 'bg-orange-500'}`}></span>
@@ -65,11 +63,10 @@ export default function InventoryOverview({ lowStockProducts, onAdjustClick }) {
             )
         },
         {
-            headerName: 'Hành Động',
-            width: '150px',
-            headerClassName: 'justify-end pr-6',
-            cellClassName: 'pr-6',
-            cellRenderer: (p) => (
+            title: 'Hành Động',
+            width: 150,
+            align: 'right',
+            render: (_, p) => (
                 <div className="flex items-center justify-end h-full">
                     <button 
                         onClick={() => onAdjustClick(p.id)}
@@ -93,13 +90,13 @@ export default function InventoryOverview({ lowStockProducts, onAdjustClick }) {
                     {lowStockProducts.length} sản phẩm
                 </span>
             </div>
-            <div className="flex-1 overflow-hidden min-h-[300px]">
-                <DataTable
+            <div className="flex-1 p-4">
+                <Table
                     columns={columns}
-                    data={lowStockProducts}
-                    loading={false}
-                    emptyMessage="Tất cả sản phẩm đều có số lượng an toàn."
-                    wrapperClassName="h-full flex flex-col"
+                    dataSource={lowStockProducts}
+                    rowKey="id"
+                    pagination={false}
+                    scroll={{ x: 'max-content', y: 'calc(100vh - 330px)' }}
                 />
             </div>
         </div>

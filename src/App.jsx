@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from 'react-hot-toast';
 import store from './store';
 import './i18n';
@@ -12,9 +13,10 @@ import AdminLayout from './components/Layout/AdminLayout';
 // ── Route Guard ──
 import ProtectedRoute from './routes/ProtectedRoute';
 
+
 // ── Public Pages (dùng lại pages cũ + pages mới được cập nhật) ──
 import Home from './pages/Customer/Home/index';             // Trang chủ cũ
-import Shop from './pages/Customer/Shop/index';             // Trang shop cũ  
+import Shop from './pages/Customer/Shop/index';             // Trang shop cũ
 import Details from './pages/Customer/Details/index';       // Chi tiết sản phẩm cũ
 
 // ── Pages mới (Tailwind + kết nối BE mới) ──
@@ -50,10 +52,14 @@ import AdminMedia from './pages/Admin/Media';
 import AdminMasterData from './pages/Admin/MasterData/AdminMasterData';
 import AdminInventory from './pages/Admin/Inventory/AdminInventory';
 import AdminPurchaseOrders from './pages/Admin/PurchaseOrders/AdminPurchaseOrders';
+import RolesAndPermissions from './pages/Admin/System/RolesAndPermissions';
+import Groups from './pages/Admin/System/Groups';
+import MenuManager from './pages/Admin/System/MenuManager';
+import AdminAccounts from './pages/Admin/System/AdminAccounts';
+
 
 // ── Not Found ──
 import NotFoundPage from './pages/Customer/NotFound';
-
 // React Query client – cache 5 phút
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,6 +71,14 @@ export default function App() {
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
+        <AppContent />
+      </QueryClientProvider>
+    </Provider>
+  );
+}
+
+function AppContent() {
+  return (
         <BrowserRouter>
           {/* Toast notifications */}
           <Toaster
@@ -134,14 +148,18 @@ export default function App() {
                 <Route path="locations" element={<AdminLocations />} />
                 <Route path="inventory" element={<AdminInventory />} />
                 <Route path="purchase-orders" element={<AdminPurchaseOrders />} />
+                <Route path="rbac-roles" element={<RolesAndPermissions />} />
+                <Route path="rbac-groups" element={<Groups />} />
+                <Route path="rbac-menus" element={<MenuManager />} />
+                <Route path="rbac-accounts" element={<AdminAccounts />} />
+
               </Route>
             </Route>
 
             {/* 404 */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
+          <ReactQueryDevtools initialIsOpen={false} />
         </BrowserRouter>
-      </QueryClientProvider>
-    </Provider>
   );
 }

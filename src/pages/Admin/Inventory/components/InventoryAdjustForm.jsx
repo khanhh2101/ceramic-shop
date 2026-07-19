@@ -47,9 +47,13 @@ export default function InventoryAdjustForm({ products, masterColors, adjustForm
                 >
                   <option value="">-- Không màu (Tồn chung: {selectedProduct.stockQuantity}) --</option>
                   {masterColors?.map(c => {
-                    const stock = selectedProduct.colors?.find(ac => ac.id === c.id)?.stockQuantity || 0;
+                    // masterColors dùng genCd là ID, genNameVn là tên
+                    // product.colors[] dùng id trùng với genCd
+                    const colorId = c.genCd ?? c.id;
+                    const colorName = c.genNameVn || c.genNameEn || c.name || '';
+                    const stock = selectedProduct.colors?.find(ac => ac.id === colorId)?.stockQuantity ?? 0;
                     return (
-                      <option key={c.id} value={c.id}>{c.name} (Tồn hiện tại: {stock})</option>
+                      <option key={colorId} value={colorId}>{colorName} (Tồn hiện tại: {stock})</option>
                     );
                   })}
                 </select>

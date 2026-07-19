@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { aboutApi } from './api/aboutApi';
+import { useSettings, useTimeline } from '@/pages/Customer/Home/hooks/useHomeData';
 
 import AboutHero from './components/AboutHero';
 import AboutStats from './components/AboutStats';
@@ -8,28 +7,13 @@ import AboutQuote from './components/AboutQuote';
 import AboutValues from './components/AboutValues';
 import AboutGallery from './components/AboutGallery';
 import AboutCta from './components/AboutCta';
+import AboutTimeline from './components/AboutTimeline';
 
 import './AboutPage.css';
 
 export default function AboutPage() {
-    const [blocks, setBlocks] = useState({});
-
-    useEffect(() => {
-        aboutApi.getHomeSettings().then(res => {
-            const data = res || [];
-            const blockMap = {};
-            data.forEach(b => {
-                if (b.blockKey.startsWith('about_') || b.blockKey === 'brand_story') {
-                    try {
-                        blockMap[b.blockKey] = JSON.parse(b.dataJson);
-                    } catch (e) {
-                        blockMap[b.blockKey] = {};
-                    }
-                }
-            });
-            setBlocks(blockMap);
-        }).catch(err => console.error(err));
-    }, []);
+    const { data: blocks = {} } = useSettings();
+    const { data: timeline = [] } = useTimeline();
 
     const hero = blocks['about_hero'] || {
         image: "https://images.unsplash.com/photo-1565193566173-6a0d0d860d5b?q=80&w=2000&auto=format&fit=crop",
@@ -102,6 +86,12 @@ export default function AboutPage() {
             <AboutStory story={story} />
             <AboutQuote quote={quote} />
             <AboutValues values={values} />
+            
+            {/* Timeline Lịch sử hình thành */}
+            {blocks['about_timeline'] && (
+                <AboutTimeline timeline={timeline} />
+            )}
+
             <AboutGallery gallery={gallery} />
             <AboutCta cta={cta} />
         </div>

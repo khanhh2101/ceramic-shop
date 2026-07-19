@@ -7,6 +7,7 @@ import { toggleCartDrawer } from '@/store/slices/uiSlice';
 import { toggleWishlist } from '@/store/slices/wishlistSlice';
 import { selectIsAuthenticated } from '@/store/slices/authSlice';
 import { productApi } from './api/productApi';
+import { useProductDetails, useProductReviews, useSimilarProducts } from '@/hooks/queries/useProducts';
 import toast from 'react-hot-toast';
 import DOMPurify from 'dompurify';
 import { Helmet } from 'react-helmet-async';
@@ -25,78 +26,45 @@ export default function ProductDetails() {
     const isAuth = useSelector(selectIsAuthenticated);
     const wishlistIds = useSelector(state => state.wishlist.productIds);
 
-    const [product, setProduct] = useState(null);
+    // Queries
+    const { data: product, isLoading: loading, error } = useProductDetails(slug);
+    const { data: reviewsData, isLoading: loadingReviews, refetch: refetchReviews } = useProductReviews(product?.id);
+    const { data: similarProducts = [] } = useSimilarProducts(product?.id);
+    
+    const reviews = reviewsData?.items || [];
+
     const [selectedImage, setSelectedImage] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [quantity, setQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState('description');
     const [selectedColor, setSelectedColor] = useState(null);
 
-    // Reviews
-    const [reviews, setReviews] = useState([]);
-    const [loadingReviews, setLoadingReviews] = useState(false);
+    // Reviews states
     const [rating, setRating] = useState(5);
     const [hoverRating, setHoverRating] = useState(0);
     const [reviewComment, setReviewComment] = useState('');
     const [submittingReview, setSubmittingReview] = useState(false);
 
-    // Similar products
-    const [similarProducts, setSimilarProducts] = useState([]);
-
-    // ── Fetch product ──
+    // Initial setups when product loads
     useEffect(() => {
-        if (!slug) return;
-        setLoading(true);
-        setError(null);
-        productApi.getProduct(slug)
-            .then((res) => {
-                const data = res?.data || res;
-                setProduct(data);
-                const primaryImg = data.images?.find((i) => i.isPrimary)?.url
-                    || data.images?.[0]?.url
-                    || data.primaryImageUrl;
-                setSelectedImage(primaryImg);
-                if (data.colors?.length > 0) {
-                    const inStockColor = data.colors.find(c => c.stockQuantity > 0);
-                    setSelectedColor(inStockColor || data.colors[0]);
+        if (product) {
+            const primaryImg = product.images?.find((i) => i.isPrimary)?.url
+                || product.images?.[0]?.url
+                || product.primaryImageUrl;
+            setSelectedImage(primaryImg);
+
+            if (product.colors?.length > 0) {
+                const validColors = product.colors.filter(c => c.id !== 0);
+                if (validColors.length > 0) {
+                    const inStockColor = validColors.find(c => c.stockQuantity > 0);
+                    setSelectedColor(inStockColor || validColors[0]);
+                } else {
+                    setSelectedColor(null);
                 }
-                setLoading(false);
-            })
-            .catch((err) => {
-                setError(err.message);
-                setLoading(false);
-            });
-    }, [slug]);
-
-    // ── Fetch reviews (always) ──
-    useEffect(() => {
-        if (product?.id) {
-            setLoadingReviews(true);
-            productApi.getReviews(product.id)
-                .then((res) => {
-                    const d = res;
-                    setReviews(Array.isArray(d) ? d : (d?.items || d?.data || []));
-                })
-                .catch(() => setReviews([]))
-                .finally(() => setLoadingReviews(false));
+            }
         }
-    }, [product?.id]);
+    }, [product]);
 
-    // ── Fetch similar products (limit 5) ──
-    useEffect(() => {
-        if (product?.id) {
-            productApi.getSimilarProducts(product.id)
-                .then((res) => {
-                    const d = res;
-                    const items = Array.isArray(d) ? d : (d?.data || d?.items || []);
-                    setSimilarProducts(items.slice(0, 5));
-                })
-                .catch(() => setSimilarProducts([]));
-        }
-    }, [product?.id]);
-
-    // ── Cập nhật lại số lượng nếu đổi màu có tồn kho ít hơn số lượng đang chọn ──
+    // Update quantity if color changes
     useEffect(() => {
         const currentStock = selectedColor ? (selectedColor.stockQuantity || 0) : (product?.stockQuantity || 0);
         if (quantity > currentStock && currentStock > 0) {
@@ -141,9 +109,7 @@ export default function ProductDetails() {
             toast.success(t('product.reviewSent'));
             setReviewComment('');
             setRating(5);
-            const res = await productApi.getReviews(product.id);
-            const d = res;
-            setReviews(Array.isArray(d) ? d : (d?.items || d?.data || []));
+            refetchReviews(); // Refetch the reviews after submitting
         } catch (err) {
             if (err.response?.status === 403) {
                 toast.error(t('product.mustPurchase'));
@@ -163,7 +129,7 @@ export default function ProductDetails() {
             <p style={{ marginTop: '1rem', fontSize: '14px', color: '#888' }}>{t('common.loading')}</p>
         </div>
     );
-    if (error) return <div style={{ textAlign: 'center', padding: '5rem 0', color: '#888', fontSize: '16px' }}>{t('common.error')}: {error}</div>;
+    if (error) return <div style={{ textAlign: 'center', padding: '5rem 0', color: '#888', fontSize: '16px' }}>{t('common.error')}: {error?.message || 'Lỗi'}</div>;
     if (!product) return null;
 
     const isWishlisted = wishlistIds.includes(product.id);
@@ -231,23 +197,51 @@ export default function ProductDetails() {
                 />
             </div>
 
-            <ProductTabs 
-                product={product}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                cleanDescription={cleanDescription}
-                reviews={reviews}
-                loadingReviews={loadingReviews}
-                isAuth={isAuth}
-                rating={rating}
-                setRating={setRating}
-                hoverRating={hoverRating}
-                setHoverRating={setHoverRating}
-                reviewComment={reviewComment}
-                setReviewComment={setReviewComment}
-                handleSubmitReview={handleSubmitReview}
-                submittingReview={submittingReview}
-            />
+            <div className="details-bottom-grid">
+                <div className="details-tabs-col">
+                    <ProductTabs 
+                        product={product}
+                        activeTab={activeTab}
+                        setActiveTab={setActiveTab}
+                        cleanDescription={cleanDescription}
+                        reviews={reviews}
+                        loadingReviews={loadingReviews}
+                        isAuth={isAuth}
+                        rating={rating}
+                        setRating={setRating}
+                        hoverRating={hoverRating}
+                        setHoverRating={setHoverRating}
+                        reviewComment={reviewComment}
+                        setReviewComment={setReviewComment}
+                        handleSubmitReview={handleSubmitReview}
+                        submittingReview={submittingReview}
+                    />
+                </div>
+                
+                <div className="details-additional-col">
+                    <h3 className="details-additional-title">Additional Information</h3>
+                    <div className="details-additional-list">
+                        {product.material && (
+                            <div className="details-additional-item">
+                                <span className="details-additional-label">MATERIAL</span>
+                                <span className="details-additional-val">{product.material}</span>
+                            </div>
+                        )}
+                        {product.specifications && (
+                            <div className="details-additional-item">
+                                <span className="details-additional-label">DIMENSIONS / SPECS</span>
+                                <span className="details-additional-val">{product.specifications}</span>
+                            </div>
+                        )}
+                        {product.usageGuide && (
+                            <div className="details-additional-item">
+                                <span className="details-additional-label">USAGE GUIDE</span>
+                                <span className="details-additional-val">{product.usageGuide}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
 
             <SimilarProducts similarProducts={similarProducts} />
         </div>

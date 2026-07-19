@@ -90,8 +90,8 @@ export default function CartList({
                                 {item.productName}
                             </h3>
                             <div className="text-[12px] text-[#888] mb-1 flex items-center gap-2 flex-wrap">
-                                {item.productCode && <span>SKU: {item.productCode}</span>}
-                                {item.productCode && item.color && <span>|</span>}
+                                {item.sku ? <span>SKU: {item.sku}</span> : (item.productCode && <span>SKU: {item.productCode}</span>)}
+                                {(item.sku || item.productCode) && item.color && <span>|</span>}
                                 {item.color && <span>Màu: <span className="capitalize">{item.color}</span></span>}
                             </div>
                             <div className="text-[13px] text-[#1a1a1a] font-medium">

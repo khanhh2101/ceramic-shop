@@ -1,18 +1,31 @@
 import { useNavigate } from 'react-router-dom';
 import { FaFacebookF, FaInstagram, FaTiktok, FaPinterestP } from 'react-icons/fa';
-import { SiZalo } from 'react-icons/si';
+import { SiZalo, SiYoutube } from 'react-icons/si';
 import { FiMapPin, FiPhone, FiMail } from 'react-icons/fi';
+import { useGlobalSettings } from '@/pages/Customer/Home/hooks/useHomeData';
 
 export default function Footer() {
     const navigate = useNavigate();
+    const { data: settings = {} } = useGlobalSettings();
     
     const socialLinks = [
-        { href: 'https://facebook.com', icon: <FaFacebookF />, label: 'Facebook' },
-        { href: 'https://instagram.com', icon: <FaInstagram />, label: 'Instagram' },
-        { href: 'https://pinterest.com', icon: <FaPinterestP />, label: 'Pinterest' },
-        { href: 'https://tiktok.com', icon: <FaTiktok />, label: 'TikTok' },
-        { href: 'https://zalo.me', icon: <SiZalo />, label: 'Zalo' },
-    ];
+        { href: settings.store_facebook || 'https://facebook.com', icon: <FaFacebookF />, label: 'Facebook' },
+        { href: settings.store_instagram || 'https://instagram.com', icon: <FaInstagram />, label: 'Instagram' },
+        { href: settings.store_zalo || 'https://zalo.me', icon: <SiZalo />, label: 'Zalo' },
+        { href: settings.store_youtube || 'https://youtube.com', icon: <SiYoutube />, label: 'YouTube' },
+    ].filter(item => item.href && item.href !== 'https://facebook.com' && item.href !== 'https://instagram.com' && item.href !== 'https://zalo.me' && item.href !== 'https://youtube.com' || settings.store_facebook); // simple check to hide empty ones
+
+    // Better filter:
+    const activeSocials = [];
+    if (settings.social_facebook || settings.store_facebook) activeSocials.push({ href: settings.social_facebook || settings.store_facebook, icon: <FaFacebookF />, label: 'Facebook' });
+    if (settings.social_instagram || settings.store_instagram) activeSocials.push({ href: settings.social_instagram || settings.store_instagram, icon: <FaInstagram />, label: 'Instagram' });
+    if (settings.social_zalo || settings.store_zalo) activeSocials.push({ href: settings.social_zalo || settings.store_zalo, icon: <SiZalo />, label: 'Zalo' });
+    if (settings.social_youtube || settings.store_youtube) activeSocials.push({ href: settings.social_youtube || settings.store_youtube, icon: <SiYoutube />, label: 'YouTube' });
+    if (activeSocials.length === 0) {
+        // Fallback
+        activeSocials.push({ href: 'https://facebook.com', icon: <FaFacebookF />, label: 'Facebook' });
+        activeSocials.push({ href: 'https://instagram.com', icon: <FaInstagram />, label: 'Instagram' });
+    }
 
     const filterShop = (category) => {
         navigate('/shop');
@@ -29,16 +42,16 @@ export default function Footer() {
                             className="text-[32px] mb-6 text-[#f5ebe0] cursor-pointer font-display drop-shadow-sm hover:text-white transition-colors"
                             onClick={() => navigate('/')}
                         >
-                            Gốm Nâu
+                            {settings.store_name || 'Gốm Nâu'}
                         </div>
                         <p className="text-[14px] leading-[1.8] mb-8 text-[#aaa] font-light">
-                            Chúng tôi tin rằng mỗi món đồ gốm đều mang trong mình một linh hồn. Gốm Nâu mang đến đồ gốm mộc mạc thủ công chất lượng cao, lưu giữ vẻ đẹp của Đất Mẹ và bàn tay nghệ nhân Việt.
+                            {settings.footer_about || 'Chúng tôi tin rằng mỗi món đồ gốm đều mang trong mình một linh hồn. Gốm Nâu mang đến đồ gốm mộc mạc thủ công chất lượng cao, lưu giữ vẻ đẹp của Đất Mẹ và bàn tay nghệ nhân Việt.'}
                         </p>
 
                         <div>
                             <h4 className="text-white mb-4 text-[13px] uppercase tracking-[2px] font-bold">Kết Nối Với Chúng Tôi</h4>
                             <div className="flex flex-wrap gap-3">
-                                {socialLinks.map((item, i) => (
+                                {activeSocials.map((item, i) => (
                                     <a
                                         key={i}
                                         href={item.href}
@@ -117,20 +130,22 @@ export default function Footer() {
                             <div className="flex items-start gap-3">
                                 <FiMapPin className="text-[#b5624a] mt-1 shrink-0" size={18} />
                                 <p className="text-[#aaa] text-[14px] leading-[1.6] font-light">
-                                    123 Đường Gốm Sứ, Phường Nghệ Thuật, Quận 1, TP. Hồ Chí Minh
+                                    {settings.contact_address || settings.store_address || '123 Đường Gốm Sứ, Phường Nghệ Thuật, Quận 1, TP. Hồ Chí Minh'}
                                 </p>
                             </div>
                             <div className="flex items-start gap-3">
                                 <FiPhone className="text-[#b5624a] mt-1 shrink-0" size={18} />
                                 <div>
-                                    <p className="text-[#aaa] text-[14px] leading-[1.6] font-light">0987 654 321</p>
+                                    <p className="text-[#aaa] text-[14px] leading-[1.6] font-light">
+                                        {settings.contact_hotline || settings.store_phone || '0987 654 321'}
+                                    </p>
                                     <p className="text-[#aaa] text-[12px] opacity-70 mt-1">(T2 - CN: 08:00 - 21:00)</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
                                 <FiMail className="text-[#b5624a] mt-1 shrink-0" size={18} />
                                 <p className="text-[#aaa] text-[14px] leading-[1.6] font-light">
-                                    hello@gomnau.vn
+                                    {settings.contact_support_email || settings.store_email || 'hello@gomnau.vn'}
                                 </p>
                             </div>
                         </div>
@@ -139,7 +154,7 @@ export default function Footer() {
 
                 {/* Footer Bottom */}
                 <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center text-[#888] text-[13px] gap-4">
-                    <span>© {new Date().getFullYear()} Gốm Nâu Shop. All Rights Reserved.</span>
+                    <span>{settings.footer_copyright || `© ${new Date().getFullYear()} Gốm Nâu Shop. All Rights Reserved.`}</span>
                     <div className="flex gap-6">
                         <button onClick={() => navigate('/support/terms')} className="hover:text-[#b5624a] transition-colors duration-300">Điều Khoản Dịch Vụ</button>
                         <button onClick={() => navigate('/support/privacy')} className="hover:text-[#b5624a] transition-colors duration-300">Chính Sách Bảo Mật</button>

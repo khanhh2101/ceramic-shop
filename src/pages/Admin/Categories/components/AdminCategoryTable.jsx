@@ -1,16 +1,15 @@
 import React, { useMemo } from 'react';
 import { FiEdit2, FiTrash2, FiTag } from 'react-icons/fi';
 import ActionIconButton from '@/components/common/ActionIconButton';
-import DataTable from '@/components/common/DataTable';
+import AntTable from '@/components/common/AntTable';
 
 export default function AdminCategoryTable({ categories, loading, handleOpenModal, handleDelete }) {
     const columns = useMemo(() => [
         {
-            headerName: 'Tên Danh Mục',
-            field: 'name',
-            flex: 1,
-            minWidth: '200px',
-            cellRenderer: (cat) => (
+            title: 'Tên Danh Mục',
+            key: 'name',
+            width: 250,
+            render: (_, cat) => (
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 overflow-hidden shrink-0">
                         {cat.imageUrl ? (
@@ -21,29 +20,32 @@ export default function AdminCategoryTable({ categories, loading, handleOpenModa
                     </div>
                     <span className="font-semibold text-gray-900">{cat.name}</span>
                 </div>
-            )
+            ),
+            sorter: (a, b) => (a.name || '').localeCompare(b.name || '')
         },
         {
-            headerName: 'Slug',
-            field: 'slug',
-            width: '200px',
-            cellClassName: 'text-sm text-gray-500'
+            title: 'Slug',
+            dataIndex: 'slug',
+            width: 200,
+            render: (slug) => <span className="text-sm text-gray-500">{slug}</span>
         },
         {
-            headerName: 'Số Sản Phẩm',
-            field: 'productCount',
-            width: '150px',
-            cellRenderer: (cat) => (
+            title: 'Số Sản Phẩm',
+            dataIndex: 'productCount',
+            width: 150,
+            render: (productCount) => (
                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                    {cat.productCount || 0} sản phẩm
+                    {productCount || 0} sản phẩm
                 </span>
-            )
+            ),
+            sorter: (a, b) => (a.productCount || 0) - (b.productCount || 0)
         },
         {
-            headerName: 'Thao Tác',
-            width: '100px',
-            headerClassName: 'justify-end pr-0 text-right',
-            cellRenderer: (cat) => (
+            title: 'Thao Tác',
+            key: 'action',
+            width: 100,
+            align: 'right',
+            render: (_, cat) => (
                 <div className="flex items-center justify-end gap-1 opacity-100 transition-opacity">
                     <ActionIconButton 
                         icon={FiEdit2} 
@@ -62,11 +64,14 @@ export default function AdminCategoryTable({ categories, loading, handleOpenModa
     ], [handleOpenModal, handleDelete]);
 
     return (
-        <DataTable 
-            columns={columns}
-            data={categories}
-            loading={loading}
-            emptyMessage="Không tìm thấy danh mục nào"
-        />
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+            <AntTable 
+                columns={columns}
+                dataSource={categories}
+                loading={loading}
+                emptyMessage="Không tìm thấy danh mục nào"
+                pagination={false}
+            />
+        </div>
     );
 }

@@ -1,6 +1,13 @@
 import React from 'react';
 import { FiX } from 'react-icons/fi';
 import Modal from '@/components/common/Modal';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 export default function CouponModal({ 
     isOpen, 
@@ -26,25 +33,58 @@ export default function CouponModal({
                 <form id="couponForm" onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-900 mb-1.5">Mã Coupon (VD: TET2024) <span className="text-red-500">*</span></label>
+                            <label className="block text-sm font-semibold text-gray-900 mb-1.5 flex justify-between items-center">
+                                <span>Mã Coupon <span className="text-red-500">*</span></span>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+                                        setFormData({...formData, code});
+                                    }}
+                                    className="text-xs text-[#b5624a] hover:underline"
+                                >
+                                    Tạo ngẫu nhiên
+                                </button>
+                            </label>
                             <input
                                 type="text"
                                 value={formData.code}
                                 onChange={(e) => setFormData({...formData, code: e.target.value.toUpperCase()})}
                                 className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-xl py-3 px-4 focus:ring-2 focus:ring-[#b5624a] outline-none uppercase"
                                 required
+                                placeholder="VD: TET2024"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-gray-900 mb-1.5">Loại giảm giá <span className="text-red-500">*</span></label>
-                            <select
-                                value={formData.type}
-                                onChange={(e) => setFormData({...formData, type: e.target.value})}
-                                className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-xl py-3 px-4 focus:ring-2 focus:ring-[#b5624a] outline-none"
+                            <label className="block text-sm font-semibold text-gray-900 mb-1.5">Áp dụng cho <span className="text-red-500">*</span></label>
+                            <Select
+                                value={formData.isShippingDiscount ? "true" : "false"}
+                                onValueChange={(val) => setFormData({...formData, isShippingDiscount: val === "true"})}
                             >
-                                <option value="0">Giảm theo Phần trăm (%)</option>
-                                <option value="1">Giảm Số tiền cố định (VNĐ)</option>
-                            </select>
+                                <SelectTrigger className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-xl py-3 px-4 h-[46px] focus:ring-2 focus:ring-[#b5624a] outline-none">
+                                    <SelectValue placeholder="Chọn loại áp dụng" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white">
+                                    <SelectItem value="false">Đơn hàng (Sản phẩm)</SelectItem>
+                                    <SelectItem value="true">Phí vận chuyển</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-900 mb-1.5">Loại giảm giá <span className="text-red-500">*</span></label>
+                            <Select
+                                value={formData.type.toString()}
+                                onValueChange={(val) => setFormData({...formData, type: parseInt(val)})}
+                            >
+                                <SelectTrigger className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-xl py-3 px-4 h-[46px] focus:ring-2 focus:ring-[#b5624a] outline-none">
+                                    <SelectValue placeholder="Chọn loại giảm giá" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white">
+                                    <SelectItem value="0">Giảm theo Phần trăm (%)</SelectItem>
+                                    <SelectItem value="1">Giảm Số tiền cố định (VNĐ)</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         <div>
@@ -104,6 +144,24 @@ export default function CouponModal({
                                 className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-xl py-3 px-4 focus:ring-2 focus:ring-[#b5624a] outline-none"
                             />
                             <p className="text-xs text-gray-500 mt-1">Để trống nếu mã giảm giá vô thời hạn.</p>
+                        </div>
+
+                        <div className="md:col-span-2 pt-2 border-t border-gray-100">
+                            <label className="flex items-center gap-3 cursor-pointer p-3 border rounded-xl hover:bg-gray-50 transition-colors">
+                                <div className="relative">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.isPublic}
+                                        onChange={(e) => setFormData({...formData, isPublic: e.target.checked})}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#b5624a]"></div>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-gray-900">Áp dụng tất cả (Công khai)</p>
+                                    <p className="text-xs text-gray-500">Mã sẽ xuất hiện trong danh sách mã giảm giá để khách hàng dễ dàng chọn khi thanh toán.</p>
+                                </div>
+                            </label>
                         </div>
                     </div>
                 </form>

@@ -11,6 +11,7 @@ import Footer from './components/Footer';
 import Newsletter from './components/Newsletter';
 import CartSidebar from '@/pages/Customer/CartSidebar';
 import { selectCartDrawerOpen, closeCartDrawer, toggleCartDrawer } from '@/store/slices/uiSlice';
+import { useCartValidator } from '@/hooks/queries/useCartQueries';
 
 // ── Main Layout ─── Header + Content + Newsletter + Footer
 export default function MainLayout() {
@@ -29,6 +30,9 @@ export default function MainLayout() {
       (total, item) => total + (item.price || item.product?.price || 0) * item.quantity,
       0
   );
+
+  // Hook ngầm để liên tục đồng bộ thông tin (giá, tồn kho) của CÁC SẢN PHẨM TRONG GIỎ HÀNG
+  useCartValidator();
 
   // Auto scroll to top on route change
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSmartFilter } from '@/hooks/useSmartFilter';
 import { FiSearch, FiRefreshCw } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -9,6 +9,7 @@ import { adminUserApi } from './api/adminUserApi';
 import AdminUserTable from './components/AdminUserTable';
 import AdminUserModal from './components/AdminUserModal';
 import { getErrorMessage } from '@/utils';
+import { useAdminUsers } from '@/pages/Admin/Users/hooks/useAdminUsers';
 
 export default function AdminUsers() {
   const queryClient = useQueryClient();
@@ -24,27 +25,16 @@ export default function AdminUsers() {
   const statusFilter = filters.status;
 
   const invalidateUserCaches = () => {
-    queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+    queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     queryClient.invalidateQueries({ queryKey: ['users'] });
   };
 
-  const { data: usersData, isLoading: loading } = useQuery({
-    queryKey: ['adminUsers', { searchTerm, roleFilter, statusFilter, pageIndex, pageSize }],
-    queryFn: async () => {
-      const params = { pageIndex, pageSize };
-      if (searchTerm.trim()) params.search = searchTerm.trim();
-      if (roleFilter !== '') params.role = roleFilter;
-      if (statusFilter !== '') params.isLocked = statusFilter === 'true';
-      
-      const res = await adminUserApi.getUsers(params);
-      const data = res || res;
-      return {
-          items: Array.isArray(data) ? data : (data?.data || data?.items || []),
-          totalPages: data?.totalPages || 1,
-          totalCount: data?.totalCount || 0
-      };
-    },
-    placeholderData: keepPreviousData
+  const { data: usersData, isLoading: loading } = useAdminUsers({
+      pageIndex,
+      pageSize,
+      search: searchTerm.trim() || undefined,
+      role: roleFilter !== '' ? roleFilter : undefined,
+      isLocked: statusFilter !== '' ? statusFilter === 'true' : undefined
   });
 
   const users = usersData?.items || [];

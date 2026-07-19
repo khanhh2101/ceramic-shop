@@ -77,18 +77,7 @@ export default function ReviewModal({
                         </div>
                     </div>
 
-                    {/* Tiêu đề & Nội dung */}
                     <div className="space-y-4">
-                        <div>
-                            <input
-                                type="text"
-                                className="w-full px-4 py-3.5 bg-[#f8f8f8] border border-transparent rounded-xl text-[14px] text-[#1a1a1a] transition-all duration-300 outline-none focus:bg-white focus:border-[#c4a882] focus:ring-4 focus:ring-[#c4a882]/10 placeholder:text-[#aaa]"
-                                placeholder="Tiêu đề đánh giá (VD: Sản phẩm rất đẹp!)"
-                                {...regReview('title', { required: 'Vui lòng nhập tiêu đề' })}
-                            />
-                            {errReview.title && <p className="text-[#e53e3e] text-[12px] mt-1.5 px-2">{errReview.title.message}</p>}
-                        </div>
-
                         <div>
                             <textarea
                                 className="w-full px-4 py-3.5 bg-[#f8f8f8] border border-transparent rounded-xl text-[14px] text-[#1a1a1a] transition-all duration-300 outline-none focus:bg-white focus:border-[#c4a882] focus:ring-4 focus:ring-[#c4a882]/10 min-h-[120px] resize-none placeholder:text-[#aaa]"

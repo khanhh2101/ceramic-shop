@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { ReactSVG } from 'react-svg';
 import { useTranslation } from 'react-i18next';
 import { selectIsAuthenticated, selectUser, selectIsAdmin, logout } from '@/store/slices/authSlice';
 import { selectCartCount } from '@/store/slices/cartSlice';
+import { useProducts } from '@/hooks/queries/useProducts';
+import { formatCurrency } from '@/utils';
 import toast from 'react-hot-toast';
 import { FiGlobe, FiUser, FiSettings, FiLogOut, FiLogIn, FiX } from 'react-icons/fi';
 
@@ -25,6 +27,35 @@ function Header({ onCartClick }) {
 
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const searchRef = useRef(null);
+
+    // Debounce the search query to prevent making API calls on every keystroke
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery.trim());
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    // Fetch search results automatically using React Query
+    const { data: searchData, isLoading: isSearching } = useProducts(
+        { search: debouncedSearch, limit: 5 },
+        { enabled: debouncedSearch.length > 0 }
+    );
+    const searchResults = searchData?.items || [];
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (searchRef.current && !searchRef.current.contains(event.target)) {
+                setIsSearchOpen(false);
+            }
+        }
+        if (isSearchOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isSearchOpen]);
 
     const toggleSearch = () => {
         setIsSearchOpen(!isSearchOpen);
@@ -96,18 +127,63 @@ function Header({ onCartClick }) {
             {/* ── Right: Actions (Search, Wishlist, Cart, User/Admin) ── */}
             <div className="flex gap-5 items-center">
                 {/* Search */}
-                <div className="flex items-center">
+                <div className="flex items-center relative" ref={searchRef}>
                     {isSearchOpen && (
-                        <form onSubmit={handleSearchSubmit} className="mr-3 animate-fade-in-up">
-                            <input
-                                type="text"
-                                autoFocus
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Tìm sản phẩm..."
-                                className="w-[160px] text-[13px] border-b border-gray-300 pb-1 focus:outline-none focus:border-[#5c3a21] bg-transparent text-[#1a1a1a]"
-                            />
-                        </form>
+                        <div className="mr-3">
+                            <form onSubmit={handleSearchSubmit} className="animate-fade-in-up relative">
+                                <input
+                                    type="text"
+                                    autoFocus
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Tìm sản phẩm..."
+                                    className="w-[200px] text-[13px] border-b border-gray-300 pb-1 focus:outline-none focus:border-[#5c3a21] bg-transparent text-[#1a1a1a]"
+                                />
+                                {isSearching && <span className="absolute right-0 top-1 w-3 h-3 border-2 border-gray-300 border-t-[#5c3a21] rounded-full animate-spin"></span>}
+                            </form>
+                            
+                            {/* Search Card Dropdown */}
+                            {searchQuery.trim().length > 0 && (
+                                <div className="absolute top-[calc(100%+20px)] right-6 w-[340px] bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-xl border border-gray-100 overflow-hidden z-[100] animate-fade-in-up">
+                                    {searchResults.length > 0 ? (
+                                        <div className="flex flex-col max-h-[420px] overflow-y-auto">
+                                            {searchResults.map(product => (
+                                                <div 
+                                                    key={product.id}
+                                                    onClick={() => {
+                                                        navigate(`/product/${product.slug || product.id}`);
+                                                        setIsSearchOpen(false);
+                                                        setSearchQuery('');
+                                                    }}
+                                                    className="flex items-center gap-3 p-3 hover:bg-[#faf7f4] cursor-pointer border-b border-gray-50 last:border-0 transition-colors"
+                                                >
+                                                    <img src={product.primaryImageUrl || 'https://placehold.co/100'} alt={product.name} className="w-14 h-14 object-cover rounded-md flex-shrink-0 bg-gray-100 mix-blend-multiply" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="text-[13px] font-medium text-gray-900 line-clamp-2 leading-snug">{product.name}</h4>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <span className="text-[13px] font-bold text-[#b5624a]">{formatCurrency(product.price)}</span>
+                                                            {product.oldPrice > product.price && (
+                                                                <span className="text-[11px] text-gray-400 line-through">{formatCurrency(product.oldPrice)}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <div 
+                                                onClick={handleSearchSubmit}
+                                                className="p-3 text-center text-[12px] font-bold tracking-widest uppercase text-[#b5624a] hover:bg-[#b5624a] hover:text-white cursor-pointer transition-colors border-t border-gray-100"
+                                            >
+                                                Xem tất cả kết quả
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="p-8 text-center text-[13px] text-gray-500 font-medium">
+                                            {isSearching ? 'Đang tìm kiếm...' : 'Không tìm thấy sản phẩm nào.'}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     )}
                     <button
                         onClick={toggleSearch}

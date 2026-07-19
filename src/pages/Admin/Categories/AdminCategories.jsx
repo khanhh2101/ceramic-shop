@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSmartFilter } from '@/hooks/useSmartFilter';
 import { FiSearch, FiPlus, FiRefreshCw } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -11,6 +11,7 @@ import AdminCategoryTable from './components/AdminCategoryTable';
 import AdminCategoryModal from './components/AdminCategoryModal';
 import ImageCropperModal from '@/components/common/ImageCropperModal';
 import { getErrorMessage } from '@/utils';
+import { useAdminCategories } from '@/pages/Admin/Categories/hooks/useAdminCategories';
 
 export default function AdminCategories() {
     const queryClient = useQueryClient();
@@ -28,24 +29,14 @@ export default function AdminCategories() {
     const [cropImageSrc, setCropImageSrc] = useState(null);
 
     const invalidateCategoryCaches = () => {
-        queryClient.invalidateQueries({ queryKey: ['adminCategories'] });
+        queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] });
         queryClient.invalidateQueries({ queryKey: ['categories'] });
     };
 
-    const { data: categoriesData, isLoading: loading } = useQuery({
-        queryKey: ['adminCategories', { searchTerm, pageIndex, pageSize }],
-        queryFn: async () => {
-            const params = { pageIndex, pageSize };
-            if (searchTerm.trim()) params.search = searchTerm.trim();
-            
-            const res = await adminCategoryApi.getCategories(params);
-            return {
-                items: Array.isArray(res) ? res : (res?.data || res?.items || []),
-                totalPages: res?.totalPages || 1,
-                totalCount: res?.totalCount || 0
-            };
-        },
-        placeholderData: keepPreviousData
+    const { data: categoriesData, isLoading: loading } = useAdminCategories({
+        pageIndex,
+        pageSize,
+        search: searchTerm.trim() || undefined
     });
 
     const categories = categoriesData?.items || [];

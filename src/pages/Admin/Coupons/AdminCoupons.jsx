@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSmartFilter } from '@/hooks/useSmartFilter';
 import { FiPlus, FiTrash2, FiSearch, FiRefreshCw, FiTag, FiClock } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -10,6 +10,14 @@ import { couponApi } from './api/couponApi';
 import { formatCurrency, formatDate } from '@/utils';
 import CouponModal from './components/CouponModal';
 import { getErrorMessage } from '@/utils';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { useAdminCoupons } from '@/pages/Admin/Coupons/hooks/useAdminCoupons';
 
 export default function AdminCoupons() {
   const queryClient = useQueryClient();
@@ -31,29 +39,21 @@ export default function AdminCoupons() {
     minOrderAmount: '0',
     maxDiscountAmount: '',
     usageLimit: '-1',
-    expiresAt: ''
+    expiresAt: '',
+    isShippingDiscount: false,
+    isPublic: false
   });
 
   const invalidateCouponCaches = () => {
-    queryClient.invalidateQueries({ queryKey: ['adminCoupons'] });
+    queryClient.invalidateQueries({ queryKey: ['admin', 'coupons'] });
     queryClient.invalidateQueries({ queryKey: ['coupons'] });
   };
 
-  const { data: couponsData, isLoading: loading } = useQuery({
-    queryKey: ['adminCoupons', { searchTerm, statusFilter, pageIndex, pageSize }],
-    queryFn: async () => {
-        const params = { pageIndex, pageSize };
-        if (searchTerm.trim()) params.search = searchTerm.trim();
-        if (statusFilter !== '') params.isActive = statusFilter === 'true';
-        
-        const res = await couponApi.getAll(params);
-        return {
-            items: Array.isArray(res) ? res : (res?.data || res?.items || []),
-            totalPages: res?.totalPages || 1,
-            totalCount: res?.totalCount || 0
-        };
-    },
-    placeholderData: keepPreviousData
+  const { data: couponsData, isLoading: loading } = useAdminCoupons({
+      pageIndex,
+      pageSize,
+      search: searchTerm.trim() || undefined,
+      isActive: statusFilter !== '' ? statusFilter === 'true' : undefined
   });
 
   const coupons = couponsData?.items || [];
@@ -62,7 +62,8 @@ export default function AdminCoupons() {
   const handleOpenModal = () => {
     setFormData({
       code: '', type: 0, value: '', minOrderAmount: '0', 
-      maxDiscountAmount: '', usageLimit: '-1', expiresAt: ''
+      maxDiscountAmount: '', usageLimit: '-1', expiresAt: '',
+      isShippingDiscount: false, isPublic: false
     });
     setIsModalOpen(true);
   };
@@ -85,7 +86,9 @@ export default function AdminCoupons() {
       minOrderAmount: parseFloat(formData.minOrderAmount) || 0,
       maxDiscountAmount: formData.maxDiscountAmount ? parseFloat(formData.maxDiscountAmount) : null,
       usageLimit: parseInt(formData.usageLimit) || -1,
-      expiresAt: formData.expiresAt ? new Date(formData.expiresAt).toISOString() : null
+      expiresAt: formData.expiresAt ? new Date(formData.expiresAt).toISOString() : null,
+      isShippingDiscount: formData.isShippingDiscount,
+      isPublic: formData.isPublic
     };
 
     try {
@@ -146,15 +149,19 @@ export default function AdminCoupons() {
 
           {/* Specific Filters */}
           <div className="w-full lg:w-auto">
-              <select
+              <Select
                   value={statusFilter}
-                  onChange={(e) => setFilter('status', e.target.value)}
-                  className="w-full lg:w-auto bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-[#b5624a] outline-none"
+                  onValueChange={(val) => setFilter('status', val === "all" ? "" : val)}
               >
-                  <option value="">Tất cả trạng thái</option>
-                  <option value="true">Đang hoạt động</option>
-                  <option value="false">Không khả dụng</option>
-              </select>
+                  <SelectTrigger className="w-full lg:w-[180px] bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl py-2.5 h-[42px] focus:ring-2 focus:ring-[#b5624a] outline-none">
+                      <SelectValue placeholder="Tất cả trạng thái" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                      <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                      <SelectItem value="true">Đang hoạt động</SelectItem>
+                      <SelectItem value="false">Không khả dụng</SelectItem>
+                  </SelectContent>
+              </Select>
           </div>
 
           <div className="flex items-center gap-2 w-full lg:w-auto">
@@ -210,7 +217,17 @@ export default function AdminCoupons() {
                                     </div>
                                     <div>
                                     <span className="font-bold text-gray-900 tracking-wider bg-gray-100 px-2 py-0.5 rounded text-sm">{coupon.code}</span>
-                                    <p className="text-xs text-gray-500 mt-1">Đơn tối thiểu: {formatCurrency(coupon.minOrderAmount)}</p>
+                                    <div className="flex gap-1.5 mt-1">
+                                        {coupon.isPublic && (
+                                            <span className="bg-blue-100 text-blue-700 text-[10px] px-1.5 py-0.5 rounded font-medium">Public</span>
+                                        )}
+                                        {coupon.isShippingDiscount ? (
+                                            <span className="bg-purple-100 text-purple-700 text-[10px] px-1.5 py-0.5 rounded font-medium">Vận chuyển</span>
+                                        ) : (
+                                            <span className="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded font-medium">Đơn hàng</span>
+                                        )}
+                                    </div>
+                                    <p className="text-[11px] text-gray-500 mt-1">Đơn tối thiểu: {formatCurrency(coupon.minOrderAmount)}</p>
                                     </div>
                                 </div>
                                 </div>

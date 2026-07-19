@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSmartFilter } from '@/hooks/useSmartFilter';
 import { FiSearch, FiPlus, FiX, FiRefreshCw } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -13,12 +13,11 @@ import AdminProductTable from './components/AdminProductTable';
 import { formatCurrency } from '@/utils';
 import AdminProductModal from './components/AdminProductModal';
 import { getErrorMessage } from '@/utils';
+import { useAdminProducts } from '@/pages/Admin/Products/hooks/useAdminProducts';
+import { useCategories, useColors, useTags } from '@/hooks/queries/useMasterData';
 
 export default function AdminProducts() {
     const queryClient = useQueryClient();
-    const [categories, setCategories] = useState([]);
-    const [masterColors, setMasterColors] = useState([]);
-    const [masterTags, setMasterTags] = useState([]);
     
     const {
         pageIndex, pageSize, searchTerm, searchInput, setSearchInput,
@@ -43,6 +42,7 @@ export default function AdminProducts() {
         shortDescription: '',
         description: '',
         specifications: '',
+        usageGuide: '',
         material: '',
         tags: [],
         isVisible: true
@@ -68,77 +68,29 @@ export default function AdminProducts() {
     const [colorToAllocate, setColorToAllocate] = useState(null);
     const [unallocatedStockForModal, setUnallocatedStockForModal] = useState(0);
 
-    useEffect(() => {
-        fetchCategories();
-        fetchMasterData();
-    }, []);
+    const { data: categories = [] } = useCategories();
+    const { data: masterColors = [] } = useColors();
+    const { data: masterTags = [] } = useTags();
 
     const invalidateProductCaches = () => {
-        queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+        queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
         queryClient.invalidateQueries({ queryKey: ['products'] });
-        queryClient.invalidateQueries({ queryKey: ['lowStock'] });
-        queryClient.invalidateQueries({ queryKey: ['ledger'] });
+        queryClient.invalidateQueries({ queryKey: ['product'] });
     };
 
     // React Query for Products
-    const { data: productsData, isLoading: loading } = useQuery({
-        queryKey: ['adminProducts', { searchTerm, selectedFilterCategory, statusFilter, pageIndex, pageSize }],
-        queryFn: async () => {
-            const params = { 
-                pageIndex, 
-                pageSize, 
-                sortBy: 'newest', 
-                includeHidden: true 
-            };
-            if (searchTerm.trim()) params.search = searchTerm.trim();
-            if (selectedFilterCategory) params.categoryId = selectedFilterCategory;
-            if (statusFilter !== '') params.isVisible = statusFilter === 'true';
-            
-            const res = await adminProductApi.getProducts(params);
-            return {
-                items: Array.isArray(res) ? res : (res?.data || res?.items || []),
-                totalPages: res?.totalPages || 1,
-                totalCount: res?.totalCount || 0
-            };
-        },
-        placeholderData: keepPreviousData
+    const { data: productsData, isLoading: loading } = useAdminProducts({
+        pageIndex,
+        pageSize,
+        sortBy: 'newest',
+        includeHidden: true,
+        search: searchTerm.trim() || undefined,
+        categoryId: selectedFilterCategory || undefined,
+        isVisible: statusFilter !== '' ? statusFilter === 'true' : undefined
     });
 
     const products = productsData?.items || [];
     const totalPages = productsData?.totalPages || 1;
-
-    const fetchMasterData = async () => {
-        try {
-            const [resColor, resTag] = await Promise.all([
-                adminProductApi.getColors(),
-                adminProductApi.getTags()
-            ]);
-            const mapMasterData = (items) => {
-                const arr = Array.isArray(items) ? items : (items?.data || []);
-                return arr.map(item => ({
-                    id: item.genCd,
-                    name: item.genNameVn,
-                    hexColor: item.color
-                }));
-            };
-            setMasterColors(resColor ? mapMasterData(resColor) : []);
-            setMasterTags(resTag ? mapMasterData(resTag) : []);
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-
-
-    const fetchCategories = async () => {
-        try {
-            const res = await adminProductApi.getCategories();
-            const cats = Array.isArray(res) ? res : (res?.data || []);
-            setCategories(cats);
-        } catch (err) {
-            console.error(err);
-        }
-    };
 
     const renderCategoryOptions = (cats, level = 0) => {
         if (!Array.isArray(cats)) return [];
@@ -198,6 +150,7 @@ export default function AdminProducts() {
                     shortDescription: p.shortDescription || '',
                     description: p.description || '',
                     specifications: p.specifications || '',
+                    usageGuide: p.usageGuide || '',
                     material: p.material || '',
                     tags: initialTags,
                     colors: p.colors ? p.colors.filter(c => c.id !== 0) : [],
@@ -219,7 +172,7 @@ export default function AdminProducts() {
         } else {
             setEditingProduct(null);
             setFormData({
-                shortDescription: '', description: '', specifications: '', material: '', tags: [], colors: [], isVisible: true
+                shortDescription: '', description: '', specifications: '', usageGuide: '', material: '', tags: [], colors: [], isVisible: true
             });
             setDiscountPercent('');
             setIsOutOfStock(false);
@@ -392,6 +345,7 @@ export default function AdminProducts() {
             shortDescription: formData.shortDescription,
             description: formData.description,
             specifications: formData.specifications,
+            usageGuide: formData.usageGuide,
             material: formData.material,
             colors: formData.colors,
             tags: formData.tags,
@@ -532,35 +486,41 @@ export default function AdminProducts() {
 
             {/* MAIN FORM MODAL */}
             <AdminProductModal 
-                isModalOpen={isModalOpen}
-                handleCloseModal={handleCloseModal}
-                editingProduct={editingProduct}
-                formData={formData}
-                setFormData={setFormData}
-                handleSubmit={handleSubmit}
-                masterTags={masterTags}
-                categories={categories}
-                discountPercent={discountPercent}
-                handleDiscountChange={handleDiscountChange}
-                handleOldPriceChange={handleOldPriceChange}
-                isOutOfStock={isOutOfStock}
-                setIsOutOfStock={setIsOutOfStock}
-                toggleTag={toggleTag}
-                toggleColor={toggleColor}
-                masterColors={masterColors}
-                renderCategoryOptions={renderCategoryOptions}
-                existingImages={existingImages}
-                previewUrls={previewUrls}
-                handleFileSelect={handleFileSelect}
-                removeUploadFile={removeUploadFile}
-                setViewingImage={setViewingImage}
-                handleSetPrimaryImage={handleSetPrimaryImage}
-                handleDeleteImage={handleDeleteImage}
-                isColorAllocationModalOpen={isColorAllocationModalOpen}
-                setIsColorAllocationModalOpen={setIsColorAllocationModalOpen}
-                colorToAllocate={colorToAllocate}
-                unallocatedStockForModal={unallocatedStockForModal}
-                handleConfirmColorAllocation={handleConfirmColorAllocation}
+                state={{
+                    isModalOpen,
+                    editingProduct,
+                    formData,
+                    discountPercent,
+                    isOutOfStock,
+                    existingImages,
+                    previewUrls,
+                    isColorAllocationModalOpen,
+                    colorToAllocate,
+                    unallocatedStockForModal
+                }}
+                config={{
+                    masterTags,
+                    categories,
+                    masterColors,
+                    renderCategoryOptions
+                }}
+                methods={{
+                    handleCloseModal,
+                    setFormData,
+                    handleSubmit,
+                    handleDiscountChange,
+                    handleOldPriceChange,
+                    setIsOutOfStock,
+                    toggleTag,
+                    toggleColor,
+                    handleFileSelect,
+                    removeUploadFile,
+                    setViewingImage,
+                    handleSetPrimaryImage,
+                    handleDeleteImage,
+                    setIsColorAllocationModalOpen,
+                    handleConfirmColorAllocation
+                }}
             />
 
             {/* FULLSCREEN IMAGE VIEWER */}

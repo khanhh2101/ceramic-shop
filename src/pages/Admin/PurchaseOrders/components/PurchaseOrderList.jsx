@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useQueryClient, useQuery, keepPreviousData } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { adminPurchaseOrderApi } from '../api/adminPurchaseOrderApi';
 import { CheckCircle, Clock, XCircle, Search, Eye, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -7,6 +7,7 @@ import ConfirmModal from '@/components/common/ConfirmModal';
 import PurchaseOrderDetailModal from './PurchaseOrderDetailModal';
 import { useSmartFilter } from '@/hooks/useSmartFilter';
 import Pagination from '@/components/common/Pagination';
+import { useAdminPurchaseOrders } from '@/pages/Admin/PurchaseOrders/hooks/useAdminPurchaseOrders';
 
 export default function PurchaseOrderList({ onAddNew }) {
   const queryClient = useQueryClient();
@@ -15,18 +16,10 @@ export default function PurchaseOrderList({ onAddNew }) {
     setPageIndex, handleSearchImmediate
   } = useSmartFilter({});
 
-  const { data: ordersData, isLoading: loading } = useQuery({
-    queryKey: ['adminPurchaseOrders', { searchTerm, pageIndex, pageSize }],
-    queryFn: async () => {
-      const p = { page: pageIndex, pageSize };
-      if (searchTerm.trim()) p.search = searchTerm.trim();
-      const res = await adminPurchaseOrderApi.getPurchaseOrders(p);
-      return {
-        items: res?.data || [],
-        totalCount: res?.totalCount || 0
-      };
-    },
-    placeholderData: keepPreviousData
+  const { data: ordersData, isLoading: loading } = useAdminPurchaseOrders({
+    page: pageIndex,
+    pageSize,
+    search: searchTerm.trim() || undefined
   });
 
   const orders = ordersData?.items || [];
@@ -64,11 +57,10 @@ export default function PurchaseOrderList({ onAddNew }) {
       const res = await adminPurchaseOrderApi.completePurchaseOrder(confirmModal.orderId);
       if (res?.success) {
         toast.success(res.message || 'Đã duyệt phiếu nhập thành công');
-        queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+        queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
         queryClient.invalidateQueries({ queryKey: ['products'] });
-        queryClient.invalidateQueries({ queryKey: ['lowStock'] });
-        queryClient.invalidateQueries({ queryKey: ['ledger'] });
-        queryClient.invalidateQueries({ queryKey: ['adminPurchaseOrders'] });
+        queryClient.invalidateQueries({ queryKey: ['admin', 'inventory'] });
+        queryClient.invalidateQueries({ queryKey: ['admin', 'purchaseorders'] });
       } else {
         toast.error(res?.message || 'Có lỗi xảy ra');
       }

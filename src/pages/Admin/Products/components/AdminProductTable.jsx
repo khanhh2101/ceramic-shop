@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { FiEye, FiEyeOff, FiEdit2, FiTrash2, FiTag, FiBox, FiAlertCircle } from 'react-icons/fi';
-import DataTable from '@/components/common/DataTable';
+import AntTable from '@/components/common/AntTable';
 
 export default function AdminProductTable({ products, loading, handleToggleVisibility, handleOpenModal, handleDelete, formatCurrency }) {
     
@@ -128,23 +128,23 @@ export default function AdminProductTable({ products, loading, handleToggleVisib
     // Column Definitions
     const columns = useMemo(() => [
         { 
-            headerName: 'Sản Phẩm', 
-            field: 'name', 
-            flex: 2, 
-            minWidth: '320px',
-            cellRenderer: ProductCellRenderer
+            title: 'Sản Phẩm', 
+            dataIndex: 'name', 
+            width: 320,
+            render: (_, p) => ProductCellRenderer(p)
         },
         { 
-            headerName: 'Danh Mục', 
-            field: 'categoryName', 
-            width: '180px',
-            cellRenderer: CategoryCellRenderer
+            title: 'Danh Mục', 
+            dataIndex: 'categoryName', 
+            width: 180,
+            render: (_, p) => CategoryCellRenderer(p),
+            sorter: (a, b) => (a.categoryName || '').localeCompare(b.categoryName || '')
         },
         { 
-            headerName: 'Kho / Vị trí', 
-            field: 'stockQuantity', 
-            width: '140px',
-            cellRenderer: (p) => (
+            title: 'Kho / Vị trí', 
+            dataIndex: 'stockQuantity', 
+            width: 140,
+            render: (_, p) => (
                 <div className="flex flex-col justify-center h-full gap-1">
                     <span className="font-bold text-gray-800 text-sm flex items-center gap-1.5">
                         <FiBox size={14} className="text-gray-400" /> Tồn: {p.stockQuantity}
@@ -170,42 +170,50 @@ export default function AdminProductTable({ products, loading, handleToggleVisib
                         </span>
                     )}
                 </div>
-            )
+            ),
+            sorter: (a, b) => a.stockQuantity - b.stockQuantity
         },
         { 
-            headerName: 'Giá Bán', 
-            field: 'price', 
-            width: '140px',
-            cellRenderer: PriceCellRenderer
+            title: 'Giá Bán', 
+            dataIndex: 'price', 
+            width: 140,
+            render: (_, p) => PriceCellRenderer(p),
+            sorter: (a, b) => a.price - b.price
         },
         { 
-            headerName: 'Tags', 
-            field: 'tags', 
-            flex: 1,
-            minWidth: '160px',
-            cellRenderer: TagsCellRenderer
+            title: 'Tags', 
+            dataIndex: 'tags', 
+            width: 160,
+            render: (_, p) => TagsCellRenderer(p)
         },
         { 
-            headerName: 'Trạng Thái', 
-            field: 'inStock', 
-            width: '130px',
-            cellRenderer: StatusCellRenderer
+            title: 'Trạng Thái', 
+            key: 'status', 
+            width: 130,
+            render: (_, p) => StatusCellRenderer(p),
+            filters: [
+                { text: 'Còn hàng', value: 'in_stock' },
+                { text: 'Hết hàng', value: 'out_of_stock' }
+            ],
+            onFilter: (value, record) => value === 'in_stock' ? record.stockQuantity > 0 : record.stockQuantity === 0
         },
         { 
-            headerName: 'Thao Tác', 
-            width: '140px',
-            cellRenderer: ActionsCellRenderer,
-            headerClassName: 'justify-end pr-6',
-            cellClassName: 'pr-2'
+            title: 'Thao Tác', 
+            key: 'action',
+            width: 140,
+            align: 'right',
+            render: (_, p) => ActionsCellRenderer(p)
         }
     ], [handleToggleVisibility, handleOpenModal, handleDelete, formatCurrency]);
 
     return (
-        <DataTable 
-            columns={columns}
-            data={products}
-            loading={loading}
-            rowClassName={(row) => (!row.isVisible ? 'bg-gray-50/50' : '')}
-        />
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+            <AntTable 
+                columns={columns}
+                dataSource={products}
+                loading={loading}
+                pagination={false}
+            />
+        </div>
     );
 }

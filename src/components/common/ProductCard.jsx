@@ -67,16 +67,26 @@ export default function ProductCard({ product }) {
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 z-0"></div>
 
                 {/* Badge giảm giá & Tags */}
-                <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+                <div className="absolute top-3 left-3 flex flex-col items-start gap-1.5 z-10">
                     {product.oldPrice > product.price && (
-                        <span className="bg-[#b5624a] text-white text-[11px] font-bold py-1.5 px-3 rounded-full uppercase tracking-[1px] shadow-sm">
+                        <span className="bg-[#e53935] text-white text-[11px] font-bold py-1 px-2.5 rounded-sm uppercase tracking-[1px] shadow-sm border border-[#e53935]">
                             -{Math.round((1 - product.price / product.oldPrice) * 100)}%
+                        </span>
+                    )}
+                    {!product.inStock && (
+                        <span className="px-2.5 py-1 text-[10px] font-bold tracking-[1px] text-[#555] bg-white/90 backdrop-blur-sm uppercase rounded-sm shadow-sm border border-[#e0e0e0]">
+                          Hết hàng
+                        </span>
+                    )}
+                    {product.isFreeShip && (
+                        <span className="px-2.5 py-1 text-[10px] font-bold tracking-[1px] text-white bg-[#4caf50] uppercase rounded-sm shadow-sm">
+                          Freeship
                         </span>
                     )}
                     {product.tags && product.tags.map(tag => (
                         <span key={tag.id || tag.name} 
-                              className="px-2 py-1 text-[10px] uppercase font-bold tracking-[1px] rounded-sm shadow-sm w-fit"
-                              style={{ backgroundColor: tag.hexColor || '#8B6F47', color: '#fff' }}>
+                              className="px-2.5 py-1 text-[10px] uppercase font-bold tracking-[1px] rounded-sm shadow-sm w-fit"
+                              style={{ backgroundColor: tag.hexColor || '#1a1a1a', color: '#fff' }}>
                           {tag.name}
                         </span>
                     ))}

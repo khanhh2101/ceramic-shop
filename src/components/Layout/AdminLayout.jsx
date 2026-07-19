@@ -13,6 +13,8 @@ import api from '@/services/api';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import ConfirmModal from '../common/ConfirmModal';
 import { Button } from '../ui/button';
+import { useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import AdminProfileMenu from './components/AdminProfileMenu';
 import AdminTabs from './components/AdminTabs';
 import TabRenderer from './components/TabRenderer';
@@ -21,27 +23,37 @@ import EmptyState from '../common/EmptyState';
 
 // Shadcn Sidebar & Collapsible
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-  SidebarFooter,
-  SidebarInset,
-  SidebarMenuAction,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
-  SidebarGroup,
-  SidebarGroupLabel,
-  useSidebar
+Sidebar,
+SidebarContent,
+SidebarHeader,
+SidebarMenu,
+SidebarMenuButton,
+SidebarMenuItem,
+SidebarProvider,
+SidebarTrigger,
+SidebarFooter,
+SidebarInset,
+SidebarMenuAction,
+SidebarMenuSub,
+SidebarMenuSubItem,
+SidebarMenuSubButton,
+SidebarGroup,
+SidebarGroupLabel,
+useSidebar
 } from "@/components/ui/sidebar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 
+
+
+const ICONS_MAP = {
+  LayoutDashboard, ShoppingBag, Tag, Package, Users, FileText,
+  Settings, ImageIcon, Database, MapPin, Star, Ticket, Archive
+};
+function getIconComponent(iconName) {
+  if (!iconName) return null;
+  return ICONS_MAP[iconName] || null;
+}
 
 const MENU_GROUPS = [
   {
@@ -49,8 +61,7 @@ const MENU_GROUPS = [
     items: [
       { title: 'Tổng quan', url: '/admin', icon: LayoutDashboard, end: true }
     ]
-  },
-  {
+  },{
     title: 'CỬA HÀNG',
     items: [
       { title: 'Sản phẩm', url: '/admin/products', icon: ShoppingBag },
@@ -75,6 +86,15 @@ const MENU_GROUPS = [
     ]
   },
   {
+    title: 'PHÂN QUYỀN',
+    items: [
+      { title: 'Tài khoản nội bộ', url: '/admin/rbac-accounts', icon: Users },
+      { title: 'Vai trò & Phân quyền', url: '/admin/rbac-roles', icon: Users },
+      { title: 'Nhóm người dùng', url: '/admin/rbac-groups', icon: Users },
+      { title: 'Menu động', url: '/admin/rbac-menus', icon: LayoutDashboard },
+    ]
+  },
+  {
     title: 'HỆ THỐNG',
     items: [
       { title: 'Media', url: '/admin/media', icon: ImageIcon },
@@ -92,14 +112,33 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { settings } = useSiteSettings();
+  const queryClient = useQueryClient();
+
+  const { data: dynamicMenuData, isLoading: isLoadingMenu } = useQuery({
+    queryKey: ['admin-menus'],
+    queryFn: async () => {
+      const res = await api.get('/admin-menus/my-menu');
+      return res?.data?.data || [];
+    },
+    enabled: isAdmin,
+    staleTime: 5 * 60 * 1000,
+  });
+
 
   const token = localStorage.getItem('accessToken');
-  
+
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [showNotifDropdown, setShowNotifDropdown] = useState(false);
-  const [activeTab, setActiveTab] = useState('ALL');
-  
+  const [showOrderNotifDropdown, setShowOrderNotifDropdown] = useState(false);
+  const [showReviewNotifDropdown, setShowReviewNotifDropdown] = useState(false);
+
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const [confirmState, setConfirmState] = useState({
     isOpen: false,
     action: null,
@@ -110,19 +149,34 @@ export default function AdminLayout() {
     confirmText: 'Xác nhận'
   });
 
-  const [soundEnabled, setSoundEnabled] = useState(() => {
-    return localStorage.getItem('adminSoundEnabled') !== 'false';
+  const [orderSoundEnabled, setOrderSoundEnabled] = useState(() => {
+    return localStorage.getItem('adminOrderSoundEnabled') !== 'false';
   });
-  const soundEnabledRef = useRef(soundEnabled);
-
+  const orderSoundEnabledRef = useRef(orderSoundEnabled);
   useEffect(() => {
-    soundEnabledRef.current = soundEnabled;
-  }, [soundEnabled]);
+    orderSoundEnabledRef.current = orderSoundEnabled;
+  }, [orderSoundEnabled]);
 
-  const toggleSound = () => {
-    setSoundEnabled(prev => {
+  const [reviewSoundEnabled, setReviewSoundEnabled] = useState(() => {
+    return localStorage.getItem('adminReviewSoundEnabled') !== 'false';
+  });
+  const reviewSoundEnabledRef = useRef(reviewSoundEnabled);
+  useEffect(() => {
+    reviewSoundEnabledRef.current = reviewSoundEnabled;
+  }, [reviewSoundEnabled]);
+
+  const toggleOrderSound = () => {
+    setOrderSoundEnabled(prev => {
       const newVal = !prev;
-      localStorage.setItem('adminSoundEnabled', newVal);
+      localStorage.setItem('adminOrderSoundEnabled', newVal);
+      return newVal;
+    });
+  };
+
+  const toggleReviewSound = () => {
+    setReviewSoundEnabled(prev => {
+      const newVal = !prev;
+      localStorage.setItem('adminReviewSoundEnabled', newVal);
       return newVal;
     });
   };
@@ -133,8 +187,13 @@ export default function AdminLayout() {
     fetchNotifications();
     fetchUnreadCount();
 
+    const handleRefresh = () => {
+        fetchNotifications();
+        fetchUnreadCount();
+    };
+    window.addEventListener('refreshNotifications', handleRefresh);
+
     const playNotificationSound = () => {
-      if (!soundEnabledRef.current) return;
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const ctx = new AudioContext();
@@ -165,10 +224,16 @@ export default function AdminLayout() {
     newConnection.start()
         .then(() => {
             newConnection.on('ReceiveNotification', (msg) => {
-                playNotificationSound();
+                const msgLower = (msg || '').toLowerCase();
+                if (msgLower.includes('đơn hàng') && orderSoundEnabledRef.current) {
+                    playNotificationSound();
+                } else if (msgLower.includes('đánh giá') && reviewSoundEnabledRef.current) {
+                    playNotificationSound();
+                }
                 toast.success(msg);
                 fetchNotifications();
                 fetchUnreadCount();
+                queryClient.invalidateQueries();
             });
         })
         .catch(e => console.log('SignalR Admin Hub connection failed: ', e));
@@ -177,6 +242,7 @@ export default function AdminLayout() {
         if (newConnection) {
             newConnection.stop();
         }
+        window.removeEventListener('refreshNotifications', handleRefresh);
     };
   }, [isAdmin, token]);
 
@@ -205,8 +271,9 @@ export default function AdminLayout() {
         setUnreadCount(prev => Math.max(0, prev - 1));
         setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n));
       }
-      setShowNotifDropdown(false);
-      
+      setShowOrderNotifDropdown(false);
+      setShowReviewNotifDropdown(false);
+
       if (notif.type === 1) {
         navigate(`/admin/orders?id=${notif.referenceId}`);
       } else if (notif.type === 2) {
@@ -230,14 +297,26 @@ export default function AdminLayout() {
     });
   };
 
-  const handleDeleteAllNotifications = () => {
+  const handleDeleteAllOrderNotifs = (orderIds) => {
     setConfirmState({
       isOpen: true,
-      action: 'DELETE_ALL_NOTIFS',
-      data: null,
+      action: 'DELETE_ALL_ORDER_NOTIFS',
+      data: orderIds,
       loading: false,
-      title: 'Xóa tất cả',
-      message: 'Bạn có chắc chắn muốn xóa tất cả thông báo không?',
+      title: 'Xóa thông báo',
+      message: 'Bạn có chắc chắn muốn xóa tất cả thông báo đơn hàng không?',
+      confirmText: 'Xóa tất cả'
+    });
+  };
+
+  const handleDeleteAllReviewNotifs = (reviewIds) => {
+    setConfirmState({
+      isOpen: true,
+      action: 'DELETE_ALL_REVIEW_NOTIFS',
+      data: reviewIds,
+      loading: false,
+      title: 'Xóa thông báo',
+      message: 'Bạn có chắc chắn muốn xóa tất cả thông báo đánh giá không?',
       confirmText: 'Xóa tất cả'
     });
   };
@@ -277,11 +356,18 @@ export default function AdminLayout() {
         setNotifications(prev => prev.filter(n => n.id !== data));
         fetchUnreadCount();
         toast.success('Đã xóa thông báo');
-      } else if (action === 'DELETE_ALL_NOTIFS') {
-        await api.delete('/notifications/all');
-        setNotifications([]);
-        setUnreadCount(0);
-        toast.success('Đã xóa tất cả thông báo');
+      } else if (action === 'DELETE_ALL_ORDER_NOTIFS') {
+        const orderIds = data;
+        await Promise.all(orderIds.map(id => api.delete(`/notifications/${id}`)));
+        setNotifications(prev => prev.filter(n => !orderIds.includes(n.id)));
+        fetchUnreadCount();
+        toast.success('Đã xóa tất cả thông báo đơn hàng');
+      } else if (action === 'DELETE_ALL_REVIEW_NOTIFS') {
+        const reviewIds = data;
+        await Promise.all(reviewIds.map(id => api.delete(`/notifications/${id}`)));
+        setNotifications(prev => prev.filter(n => !reviewIds.includes(n.id)));
+        fetchUnreadCount();
+        toast.success('Đã xóa tất cả thông báo đánh giá');
       } else if (action === 'REJECT_REVIEW') {
         await api.delete(`/reviews/${data.reviewId}`);
         toast.success('Đã xóa đánh giá');
@@ -296,12 +382,10 @@ export default function AdminLayout() {
     }
   };
 
-  const filteredNotifications = notifications.filter(n => {
-    if (activeTab === 'ALL') return true;
-    if (activeTab === 'ORDER') return n.type === 1;
-    if (activeTab === 'REVIEW') return n.type === 2;
-    return true;
-  });
+  const orderNotifications = notifications.filter(n => n.type === 1);
+  const reviewNotifications = notifications.filter(n => n.type === 2);
+  const unreadOrderCount = orderNotifications.filter(n => !n.isRead).length;
+  const unreadReviewCount = reviewNotifications.filter(n => !n.isRead).length;
 
   if (!isAdmin) {
     return <Navigate to="/" replace />;
@@ -318,7 +402,8 @@ export default function AdminLayout() {
       {/* ── Sidebar (Shadcn) ── */}
       <Sidebar collapsible="icon" className="border-r">
         <SidebarHeader className="h-14 flex items-center px-4 border-b bg-background group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
-          <div 
+          {/* Expanded State */}
+          <div
             className="flex items-center gap-3 w-full group-data-[collapsible=icon]:hidden cursor-pointer"
             onClick={() => navigate('/admin')}
           >
@@ -335,8 +420,9 @@ export default function AdminLayout() {
               <span className="text-[9px] text-gray-400 uppercase tracking-widest font-medium">Admin Panel</span>
             </div>
           </div>
-          {/* For collapsed sidebar state */}
-          <div 
+
+          {/* Collapsed State Logo */}
+          <div
             className="hidden items-center justify-center w-full h-full group-data-[collapsible=icon]:flex cursor-pointer"
             onClick={() => navigate('/admin')}
           >
@@ -349,194 +435,67 @@ export default function AdminLayout() {
         </SidebarHeader>
 
         <SidebarContent className="pt-4 bg-[#f4f6f8]">
-          {MENU_GROUPS.map((group, index) => (
-            <SidebarGroup key={index} className="pt-2 pb-2">
-              {group.title && (
-                <SidebarGroupLabel className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 px-3">
-                  {group.title}
-                </SidebarGroupLabel>
-              )}
-              <SidebarMenu>
-                {group.items.map((item) => {
-                  const isActive = location.pathname === item.url || (item.url !== '/admin' && location.pathname.startsWith(item.url));
-                  return (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
-                        <NavLink to={item.url} end={item.end} className="flex items-center w-full">
-                          {item.icon && <item.icon />}
-                          <span>{item.title}</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroup>
-          ))}
+          {isLoadingMenu ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">Đang tải Menu...</div>
+          ) : dynamicMenuData && dynamicMenuData.length > 0 ? (
+            dynamicMenuData.map((group) => {
+              // Group là root menu
+              return (
+                <SidebarGroup key={group.id} className="pt-2 pb-2">
+                  {group.titleKey && (
+                    <SidebarGroupLabel className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 px-3">
+                      {group.titleKey}
+                    </SidebarGroupLabel>
+                  )}
+                  <SidebarMenu>
+                    {group.children?.map((item) => {
+                      const isActive = location.pathname === item.path || (item.path !== '/admin' && location.pathname.startsWith(item.path));
+                      const IconComp = getIconComponent(item.icon);
+                      return (
+                        <SidebarMenuItem key={item.id}>
+                          <SidebarMenuButton asChild tooltip={item.titleKey} isActive={isActive}>
+                            <NavLink to={item.path} end={item.path === '/admin'} className="flex items-center w-full">
+                              {IconComp && <IconComp />}
+                              <span>{item.titleKey}</span>
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </SidebarMenu>
+                </SidebarGroup>
+              );
+            })
+          ) : (
+            // Fallback tĩnh khi API lỗi hoặc trống (để tránh trắng trơn khi mới dev)
+            MENU_GROUPS.map((group, index) => (
+              <SidebarGroup key={index} className="pt-2 pb-2">
+                {group.title && (
+                  <SidebarGroupLabel className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 px-3">
+                    {group.title}
+                  </SidebarGroupLabel>
+                )}
+                <SidebarMenu>
+                  {group.items.map((item) => {
+                    const isActive = location.pathname === item.url || (item.url !== '/admin' && location.pathname.startsWith(item.url));
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
+                          <NavLink to={item.url} end={item.end} className="flex items-center w-full">
+                            {item.icon && <item.icon />}
+                            <span>{item.title}</span>
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroup>
+            ))
+          )}
         </SidebarContent>
 
         <SidebarFooter className="border-t p-3 bg-[#f4f6f8]">
-          {/* Action Row: Profile + Notif + Sound */}
-          <div className="flex items-center justify-between gap-1 mb-2 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:justify-center relative">
-            <div className="flex items-center gap-2 overflow-hidden flex-1 group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:justify-center">
-              <AdminProfileMenu />
-              <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden pr-2">
-                <span className="text-[13px] font-bold text-slate-700 truncate leading-tight">
-                  {user?.fullName || 'Administrator'}
-                </span>
-                <span className="text-[11px] text-slate-500 truncate leading-tight">
-                  {user?.email || 'admin@admin.com'}
-                </span>
-              </div>
-            </div>
-            
-            <div className="flex items-center group-data-[collapsible=icon]:flex-col">
-              <Button 
-                variant="ghost" size="icon"
-                onClick={toggleSound}
-                className="rounded-full text-muted-foreground w-8 h-8 group-data-[collapsible=icon]:w-9 group-data-[collapsible=icon]:h-9 hover:bg-muted/50"
-                title={soundEnabled ? "Tắt âm thanh thông báo" : "Bật âm thanh thông báo"}
-              >
-                {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-              </Button>
-              
-              <Popover open={showNotifDropdown} onOpenChange={setShowNotifDropdown}>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="ghost" size="icon"
-                    className="relative rounded-full text-muted-foreground w-8 h-8 group-data-[collapsible=icon]:w-9 group-data-[collapsible=icon]:h-9 hover:bg-muted/50"
-                  >
-                    <Bell className="w-4 h-4" />
-                    {unreadCount > 0 && (
-                      <span className="absolute top-0 right-0 w-3 h-3 bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full flex items-center justify-center border border-background">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-
-                <PopoverContent side="right" align="end" sideOffset={16} className="w-80 p-0 bg-background border shadow-lg rounded-xl overflow-hidden z-[9999] animate-in fade-in">
-                    <div className="p-3 border-b bg-muted/30 flex justify-between items-center">
-                      <span className="font-semibold text-sm">Thông báo mới</span>
-                      <div className="flex gap-2">
-                        {unreadCount > 0 && (
-                          <button 
-                            onClick={async () => {
-                              await api.put('/notifications/read-all');
-                              setUnreadCount(0);
-                              fetchNotifications();
-                            }}
-                            className="text-xs text-primary hover:underline"
-                          >
-                            Đã đọc tất cả
-                          </button>
-                        )}
-                        {notifications.length > 0 && (
-                          <button 
-                            onClick={handleDeleteAllNotifications}
-                            className="text-xs text-destructive hover:underline flex items-center"
-                            title="Xóa tất cả"
-                          >
-                            Xóa tất cả
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Tabs */}
-                    <div className="flex text-xs font-medium border-b bg-background">
-                      <button 
-                        className={`flex-1 py-2 transition-colors ${activeTab === 'ALL' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:bg-muted/50'}`}
-                        onClick={() => setActiveTab('ALL')}
-                      >
-                        Tất cả
-                      </button>
-                      <button 
-                        className={`flex-1 py-2 transition-colors ${activeTab === 'ORDER' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:bg-muted/50'}`}
-                        onClick={() => setActiveTab('ORDER')}
-                      >
-                        Đơn hàng
-                      </button>
-                      <button 
-                        className={`flex-1 py-2 transition-colors ${activeTab === 'REVIEW' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:bg-muted/50'}`}
-                        onClick={() => setActiveTab('REVIEW')}
-                      >
-                        Đánh giá
-                      </button>
-                    </div>
-
-                    <div className="max-h-96 overflow-y-auto custom-scrollbar bg-background relative">
-                      {filteredNotifications.length === 0 ? (
-                        <EmptyState 
-                          icon={Bell}
-                          title="Không có thông báo"
-                          description="Hiện tại bạn chưa có thông báo nào."
-                          className="min-h-[250px] p-6 bg-transparent"
-                        />
-                      ) : (
-                        filteredNotifications.map(notif => (
-                          <div 
-                            key={notif.id} 
-                            onClick={() => markAsRead(notif)}
-                            className={`p-3 border-b cursor-pointer hover:bg-muted/50 transition-colors group ${!notif.isRead ? 'bg-primary/5' : ''}`}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex items-start gap-3">
-                                <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${!notif.isRead ? 'bg-primary' : 'bg-transparent'}`} />
-                                <div>
-                                  <p className={`text-sm ${!notif.isRead ? 'font-medium' : 'text-muted-foreground'}`}>
-                                    {notif.title}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    {notif.type === 2 && notif.message.includes('sao') ? (
-                                      <span className="flex items-center gap-1 mt-0.5 mb-1">
-                                        <Star className="w-3.5 h-3.5 text-yellow-500 fill-current" />
-                                        <span className="font-semibold text-foreground">
-                                          {notif.message.match(/(\d+)\s*sao/)?.[1] || 5} sao
-                                        </span>
-                                        <span>- {notif.message.split('vừa')[0]}</span>
-                                      </span>
-                                    ) : (
-                                      notif.message
-                                    )}
-                                  </p>
-                                  <span className="text-[10px] text-muted-foreground/70 mt-2 block">
-                                    {new Date(notif.createdAt).toLocaleString('vi-VN')}
-                                  </span>
-                                  {notif.type === 2 && (
-                                    <div className="mt-2 flex gap-2">
-                                      <button 
-                                        onClick={(e) => handleQuickApproveReview(e, notif.referenceId, notif.id)}
-                                        className="text-[10px] font-medium bg-green-500/10 text-green-600 dark:text-green-400 px-2.5 py-1 rounded-md border border-green-500/20 hover:bg-green-500/20 flex items-center gap-1 transition-colors"
-                                      >
-                                        <CheckCircle className="w-3 h-3" /> Phê duyệt
-                                      </button>
-                                      <button 
-                                        onClick={(e) => handleQuickRejectReview(e, notif.referenceId, notif.id)}
-                                        className="text-[10px] font-medium bg-destructive/10 text-destructive px-2.5 py-1 rounded-md border border-destructive/20 hover:bg-destructive/20 flex items-center gap-1 transition-colors"
-                                      >
-                                        <Trash2 className="w-3 h-3" /> Từ chối
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              <button 
-                                onClick={(e) => handleDeleteNotification(e, notif.id)}
-                                className="text-muted-foreground/50 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                title="Xóa thông báo"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
 
           <SidebarMenu>
             <SidebarMenuItem>
@@ -562,10 +521,255 @@ export default function AdminLayout() {
 
       {/* ── Main content wrapper ── */}
       <SidebarInset className="flex-1 flex flex-col min-w-0 bg-muted/30">
-        {/* Top bar */}
+        {/* Top bar Header */}
+        <header className="h-14 flex items-center justify-between px-4 border-b bg-white flex-shrink-0">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger className="text-gray-500 hover:text-foreground hover:bg-gray-200 transition-colors w-7 h-7" />
 
+            <div className="hidden md:flex flex-col min-w-0">
+              <span className="text-[13px] font-bold text-slate-700 tracking-wide">
+                {currentTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+              <span className="text-[11px] text-slate-500 capitalize">
+                {currentTime.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
+              </span>
+            </div>
+          </div>
 
-        {/* Admin Tabs */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              {/* Thông báo Đơn Hàng */}
+              <div className="flex items-center gap-0.5">
+                <Popover open={showOrderNotifDropdown} onOpenChange={setShowOrderNotifDropdown}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost" size="icon"
+                      className="relative rounded-full text-muted-foreground hover:bg-muted/50"
+                    >
+                      <Package className="w-5 h-5" />
+                      {unreadOrderCount > 0 && (
+                        <span className="absolute top-0 right-0 w-4 h-4 bg-[#b5624a] text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-background">
+                          {unreadOrderCount}
+                        </span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+
+                <PopoverContent side="bottom" align="end" sideOffset={8} className="w-80 p-0 bg-background border shadow-lg rounded-xl overflow-hidden z-[9999] animate-in fade-in">
+                    <div className="p-3 border-b bg-muted/30 flex justify-between items-center">
+                      <span className="font-semibold text-sm flex items-center gap-2">
+                        Đơn hàng mới
+                        <button
+                          onClick={toggleOrderSound}
+                          className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                          title={orderSoundEnabled ? "Tắt âm báo đơn hàng" : "Bật âm báo đơn hàng"}
+                        >
+                          {orderSoundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                        </button>
+                      </span>
+                      <div className="flex gap-2">
+                        {unreadOrderCount > 0 && (
+                          <button
+                            onClick={async () => {
+                              await Promise.all(orderNotifications.filter(n => !n.isRead).map(n => api.put(`/notifications/${n.id}/read`)));
+                              fetchNotifications();
+                              fetchUnreadCount();
+                            }}
+                            className="text-xs text-primary hover:underline"
+                          >
+                            Đã đọc
+                          </button>
+                        )}
+                        {orderNotifications.length > 0 && (
+                          <button
+                            onClick={() => handleDeleteAllOrderNotifs(orderNotifications.map(n => n.id))}
+                            className="text-xs text-destructive hover:underline"
+                          >
+                            Xóa tất cả
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="max-h-96 overflow-y-auto custom-scrollbar bg-background relative">
+                      {orderNotifications.length === 0 ? (
+                        <EmptyState
+                          icon={Package}
+                          title="Không có đơn hàng"
+                          description="Hiện tại bạn chưa có thông báo đơn hàng nào."
+                          className="min-h-[250px] p-6 bg-transparent"
+                        />
+                      ) : (
+                        orderNotifications.map(notif => (
+                          <div
+                            key={notif.id}
+                            onClick={() => markAsRead(notif)}
+                            className={`p-3 border-b cursor-pointer hover:bg-muted/50 transition-colors group ${!notif.isRead ? 'bg-primary/5' : ''}`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-start gap-3">
+                                <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${!notif.isRead ? 'bg-[#b5624a]' : 'bg-transparent'}`} />
+                                <div>
+                                  <p className={`text-sm ${!notif.isRead ? 'font-medium' : 'text-muted-foreground'}`}>
+                                    {notif.title}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {notif.message}
+                                  </p>
+                                  <span className="text-[10px] text-muted-foreground/70 mt-2 block">
+                                    {new Date(notif.createdAt).toLocaleString('vi-VN')}
+                                  </span>
+                                </div>
+                              </div>
+                              <button
+                                onClick={(e) => handleDeleteNotification(e, notif.id)}
+                                className="text-muted-foreground/50 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                title="Xóa thông báo"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                </PopoverContent>
+              </Popover>
+              </div>
+
+              {/* Thông báo Đánh giá */}
+              <div className="flex items-center gap-0.5">
+              <Popover open={showReviewNotifDropdown} onOpenChange={setShowReviewNotifDropdown}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost" size="icon"
+                    className="relative rounded-full text-muted-foreground hover:bg-muted/50"
+                  >
+                    <Star className="w-5 h-5" />
+                    {unreadReviewCount > 0 && (
+                      <span className="absolute top-0 right-0 w-4 h-4 bg-yellow-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-background">
+                        {unreadReviewCount}
+                      </span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+
+                <PopoverContent side="bottom" align="end" sideOffset={8} className="w-80 p-0 bg-background border shadow-lg rounded-xl overflow-hidden z-[9999] animate-in fade-in">
+                    <div className="p-3 border-b bg-muted/30 flex justify-between items-center">
+                      <span className="font-semibold text-sm flex items-center gap-2">
+                        Đánh giá mới
+                        <button
+                          onClick={toggleReviewSound}
+                          className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                          title={reviewSoundEnabled ? "Tắt âm báo đánh giá" : "Bật âm báo đánh giá"}
+                        >
+                          {reviewSoundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                        </button>
+                      </span>
+                      <div className="flex gap-2">
+                        {unreadReviewCount > 0 && (
+                          <button
+                            onClick={async () => {
+                              await Promise.all(reviewNotifications.filter(n => !n.isRead).map(n => api.put(`/notifications/${n.id}/read`)));
+                              fetchNotifications();
+                              fetchUnreadCount();
+                            }}
+                            className="text-xs text-primary hover:underline"
+                          >
+                            Đã đọc
+                          </button>
+                        )}
+                        {reviewNotifications.length > 0 && (
+                          <button
+                            onClick={() => handleDeleteAllReviewNotifs(reviewNotifications.map(n => n.id))}
+                            className="text-xs text-destructive hover:underline"
+                          >
+                            Xóa tất cả
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="max-h-96 overflow-y-auto custom-scrollbar bg-background relative">
+                      {reviewNotifications.length === 0 ? (
+                        <EmptyState
+                          icon={Star}
+                          title="Không có đánh giá"
+                          description="Hiện tại bạn chưa có thông báo đánh giá nào."
+                          className="min-h-[250px] p-6 bg-transparent"
+                        />
+                      ) : (
+                        reviewNotifications.map(notif => (
+                          <div
+                            key={notif.id}
+                            onClick={() => markAsRead(notif)}
+                            className={`p-3 border-b cursor-pointer hover:bg-muted/50 transition-colors group ${!notif.isRead ? 'bg-primary/5' : ''}`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-start gap-3">
+                                <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${!notif.isRead ? 'bg-yellow-500' : 'bg-transparent'}`} />
+                                <div>
+                                  <p className={`text-sm ${!notif.isRead ? 'font-medium' : 'text-muted-foreground'}`}>
+                                    {notif.title}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {notif.message.includes('sao') ? (
+                                      <span className="flex items-center gap-1 mt-0.5 mb-1">
+                                        <Star className="w-3.5 h-3.5 text-yellow-500 fill-current" />
+                                        <span className="font-semibold text-foreground">
+                                          {notif.message.match(/(\d+)\s*sao/)?.[1] || 5} sao
+                                        </span>
+                                        <span>- {notif.message.split('vừa')[0]}</span>
+                                      </span>
+                                    ) : (
+                                      notif.message
+                                    )}
+                                  </p>
+                                  <span className="text-[10px] text-muted-foreground/70 mt-2 block">
+                                    {new Date(notif.createdAt).toLocaleString('vi-VN')}
+                                  </span>
+                                  {!notif.isRead && (
+                                    <div className="mt-2 flex gap-2">
+                                      <button
+                                        onClick={(e) => handleQuickApproveReview(e, notif.referenceId, notif.id)}
+                                        className="text-[10px] font-medium bg-green-500/10 text-green-600 dark:text-green-400 px-2.5 py-1 rounded-md border border-green-500/20 hover:bg-green-500/20 flex items-center gap-1 transition-colors"
+                                      >
+                                        <CheckCircle className="w-3 h-3" /> Phê duyệt
+                                      </button>
+                                      <button
+                                        onClick={(e) => handleQuickRejectReview(e, notif.referenceId, notif.id)}
+                                        className="text-[10px] font-medium bg-destructive/10 text-destructive px-2.5 py-1 rounded-md border border-destructive/20 hover:bg-destructive/20 flex items-center gap-1 transition-colors"
+                                      >
+                                        <Trash2 className="w-3 h-3" /> Từ chối
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <button
+                                onClick={(e) => handleDeleteNotification(e, notif.id)}
+                                className="text-muted-foreground/50 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                title="Xóa thông báo"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                </PopoverContent>
+              </Popover>
+              </div>
+            </div>
+
+            <div className="w-px h-6 bg-border mx-2"></div>
+
+            <div className="flex items-center gap-3">
+              <AdminProfileMenu />
+            </div>
+          </div>
+        </header>        {/* Admin Tabs */}
         <AdminTabs />
 
         {/* Main Content Area */}

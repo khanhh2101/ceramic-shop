@@ -152,7 +152,7 @@ export const mediaService = {
       usedIn
     });
   },
-  uploadMultiple: async (files, bucket = 'products') => {
+  uploadMultiple: async (files, bucket = 'products', usedIn = null) => {
     const uploadPromises = files.map(async (file) => {
       const resUrl = await api.get('/media/presigned-url', { params: { fileName: file.name, bucket } });
       const { putUrl, minioKey, bucket: actualBucket } = resUrl.data;
@@ -164,7 +164,8 @@ export const mediaService = {
         minioKey,
         fileName: file.name,
         contentType: file.type,
-        fileSize: file.size
+        fileSize: file.size,
+        usedIn: usedIn || 'AdminMediaUpload'
       });
       return resConfirm.data;
     });
@@ -188,3 +189,16 @@ export const mediaService = {
   getAll: (params) => api.get('/media', { params }),
   delete: (id) => api.delete(`/media/${id}`),
 };
+
+// ── Cart API service ──────────────────────────────────────────────────────────
+export const cartApi = {
+  getCart: () => api.get('/cart'),
+  addToCart: (data) => api.post('/cart', data),
+  updateItemQuantity: (id, quantity) => api.put(`/cart/${id}`, { quantity }),
+  removeItem: (id) => api.delete(`/cart/${id}`),
+  clearCart: () => api.delete('/cart'),
+  mergeCart: (data) => api.post('/cart/merge', data),
+};
+
+export * from './rbacApi';
+export * from './menuApi';

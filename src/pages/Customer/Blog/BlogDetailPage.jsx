@@ -1,51 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { FiClock, FiUser, FiChevronLeft, FiShare2, FiFacebook, FiTwitter, FiLink, FiBookmark } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import DOMPurify from 'dompurify';
 import { Helmet } from 'react-helmet-async';
-import { blogApi } from './api/blogApi';
+import { useBlogDetails } from '@/pages/Customer/Blog/hooks/useBlogs';
 import './Blog.css';
 
 export default function BlogDetailPage() {
     const { slug } = useParams();
     const navigate = useNavigate();
-    const [blog, setBlog] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const { data: article, isLoading: loading } = useBlogDetails(slug);
+    
+    const blog = article ? {
+        id: article.id,
+        slug: article.slug,
+        title: article.title,
+        excerpt: article.metaDescription,
+        content: article.contentHtml,
+        thumbnailUrl: article.thumbnailUrl,
+        createdAt: article.createdAt,
+        author: article.authorName || 'Gốm Nâu',
+        category: article.categoryNames?.length > 0 ? article.categoryNames[0] : 'Tạp chí',
+        tags: [],
+        metaTitle: article.metaTitle,
+        metaDescription: article.metaDescription
+    } : null;
 
     useEffect(() => {
         window.scrollTo(0, 0);
-        
-        const fetchDetail = async () => {
-            setLoading(true);
-            try {
-                const response = await blogApi.getArticleBySlug(slug);
-                const article = response?.data || response;
-                setBlog({
-                    id: article.id,
-                    slug: article.slug,
-                    title: article.title,
-                    excerpt: article.metaDescription,
-                    content: article.contentHtml,
-                    thumbnailUrl: article.thumbnailUrl,
-                    createdAt: article.createdAt,
-                    author: article.authorName || 'Gốm Nâu',
-                    category: article.categoryNames?.length > 0 ? article.categoryNames[0] : 'Tạp chí',
-                    tags: [],
-                    metaTitle: article.metaTitle,
-                    metaDescription: article.metaDescription
-                });
-                document.title = `${article.metaTitle || article.title} - Gốm Nâu`;
-            } catch (error) {
-                console.error("Lỗi fetch blog detail:", error);
-                setBlog(null);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchDetail();
-    }, [slug]);
+        if (blog) {
+            document.title = `${blog.metaTitle || blog.title} - Gốm Nâu`;
+        }
+    }, [slug, blog]);
 
     const handleCopyLink = () => {
         navigator.clipboard.writeText(window.location.href);

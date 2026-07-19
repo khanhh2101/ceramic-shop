@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSmartFilter } from '@/hooks/useSmartFilter';
 import { FiSearch, FiRefreshCw } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -8,6 +8,7 @@ import ConfirmModal from '@/components/common/ConfirmModal';
 import Pagination from '@/components/common/Pagination';
 import { adminReviewApi } from './api/adminReviewApi';
 import ReviewTable from './components/ReviewTable';
+import { useAdminReviews } from '@/pages/Admin/Reviews/hooks/useAdminReviews';
 
 export default function AdminReviews() {
   const queryClient = useQueryClient();
@@ -39,27 +40,18 @@ export default function AdminReviews() {
   }, [location.search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const invalidateReviewCaches = () => {
-    queryClient.invalidateQueries({ queryKey: ['adminReviews'] });
+    queryClient.invalidateQueries({ queryKey: ['admin', 'reviews'] });
     queryClient.invalidateQueries({ queryKey: ['reviews'] });
-    queryClient.invalidateQueries({ queryKey: ['adminProducts'] }); // average rating might change
+    queryClient.invalidateQueries({ queryKey: ['admin', 'products'] }); // average rating might change
     queryClient.invalidateQueries({ queryKey: ['products'] });
+    window.dispatchEvent(new Event('refreshNotifications'));
   };
 
-  const { data: reviewsData, isLoading: loading } = useQuery({
-    queryKey: ['adminReviews', { searchTerm, ratingFilter, pageIndex, pageSize }],
-    queryFn: async () => {
-        const params = { pageIndex, pageSize };
-        if (searchTerm.trim()) params.search = searchTerm.trim();
-        if (ratingFilter !== '') params.rating = parseInt(ratingFilter);
-        
-        const res = await adminReviewApi.getReviews(params);
-        return {
-            items: Array.isArray(res) ? res : (res?.data || res?.items || []),
-            totalPages: res?.totalPages || 1,
-            totalCount: res?.totalCount || 0
-        };
-    },
-    placeholderData: keepPreviousData
+  const { data: reviewsData, isLoading: loading } = useAdminReviews({
+      pageIndex,
+      pageSize,
+      search: searchTerm.trim() || undefined,
+      rating: ratingFilter !== '' ? parseInt(ratingFilter) : undefined
   });
 
   const reviews = reviewsData?.items || [];

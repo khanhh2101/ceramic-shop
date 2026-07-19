@@ -1,39 +1,10 @@
-import { useState, useEffect } from 'react';
-import { adminDashboardApi } from './api/adminDashboardApi';
+import { useAdminDashboardStats } from '@/pages/Admin/Dashboard/hooks/useAdminDashboard';
 import DashboardStats from './components/DashboardStats';
 import RecentOrdersTable from './components/RecentOrdersTable';
 import { formatCurrency } from '@/utils';
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState({
-    totalProducts: 0,
-    totalUsers: 0,
-    totalOrders: 0,
-    totalRevenue: 0,
-  });
-  const [recentOrders, setRecentOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    adminDashboardApi.getDashboardStats().then(([productRes, userRes, orderRes]) => {
-      const orders = orderRes.data?.items || [];
-      const revenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0) * 10;
-
-      setStats({
-        totalProducts: productRes.data?.totalCount || 0,
-        totalUsers: userRes.data?.totalCount || 0,
-        totalOrders: orderRes.data?.totalCount || 0,
-        totalRevenue: revenue
-      });
-      setRecentOrders(orders);
-    }).catch(err => {
-      console.error("Lỗi khi tải dữ liệu Dashboard:", err);
-    }).finally(() => {
-      setLoading(false);
-    });
-  }, []);
-
-
+  const { data, isLoading: loading } = useAdminDashboardStats();
 
   if (loading) {
     return (
@@ -42,6 +13,11 @@ export default function AdminDashboard() {
       </div>
     );
   }
+
+  const { stats, recentOrders } = data || {
+    stats: { totalProducts: 0, totalUsers: 0, totalOrders: 0, totalRevenue: 0 },
+    recentOrders: []
+  };
 
   return (
     <div className="p-2 space-y-6">

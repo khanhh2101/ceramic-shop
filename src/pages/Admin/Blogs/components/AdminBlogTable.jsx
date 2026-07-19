@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { FiFileText, FiCheckCircle, FiClock, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import ActionIconButton from '@/components/common/ActionIconButton';
-import DataTable from '@/components/common/DataTable';
+import AntTable from '@/components/common/AntTable';
 
 export default function AdminBlogTable({ blogs, loading, handleOpenModal, handleDelete }) {
     const formatDate = (dateString) => {
@@ -13,11 +13,10 @@ export default function AdminBlogTable({ blogs, loading, handleOpenModal, handle
 
     const columns = useMemo(() => [
         {
-            headerName: 'Tiêu đề',
-            field: 'title',
-            flex: 1,
-            minWidth: '250px',
-            cellRenderer: (blog) => (
+            title: 'Tiêu đề',
+            key: 'title',
+            width: 250,
+            render: (_, blog) => (
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#b5624a]/10 flex items-center justify-center text-[#b5624a] flex-shrink-0">
                         <FiFileText size={18} />
@@ -30,30 +29,31 @@ export default function AdminBlogTable({ blogs, loading, handleOpenModal, handle
             )
         },
         {
-            headerName: 'Danh mục',
-            field: 'categoryName',
-            width: '150px',
-            cellRenderer: (blog) => (
-                blog.categoryName ? (
+            title: 'Danh mục',
+            dataIndex: 'categoryName',
+            width: 150,
+            render: (categoryName) => (
+                categoryName ? (
                     <span className="inline-flex px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs font-medium">
-                        {blog.categoryName}
+                        {categoryName}
                     </span>
                 ) : (
                     <span className="text-gray-400 italic text-xs">Chưa có</span>
                 )
-            )
+            ),
+            sorter: (a, b) => (a.categoryName || '').localeCompare(b.categoryName || '')
         },
         {
-            headerName: 'Tác giả',
-            field: 'authorName',
-            width: '150px',
-            cellClassName: 'text-sm text-gray-700'
+            title: 'Tác giả',
+            dataIndex: 'authorName',
+            width: 150,
+            render: (authorName) => <span className="text-sm text-gray-700">{authorName}</span>
         },
         {
-            headerName: 'Trạng thái',
-            field: 'status',
-            width: '180px',
-            cellRenderer: (blog) => (
+            title: 'Trạng thái',
+            key: 'status',
+            width: 180,
+            render: (_, blog) => (
                 <div>
                     {blog.isPublished ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
@@ -70,20 +70,26 @@ export default function AdminBlogTable({ blogs, loading, handleOpenModal, handle
                         </span>
                     )}
                 </div>
-            )
+            ),
+            filters: [
+                { text: 'Đã xuất bản', value: true },
+                { text: 'Bản nháp', value: false }
+            ],
+            onFilter: (value, record) => record.isPublished === value
         },
         {
-            headerName: 'Ngày xuất bản',
-            field: 'publishedAt',
-            width: '150px',
-            cellClassName: 'text-sm text-gray-500',
-            cellRenderer: (blog) => formatDate(blog.publishedAt)
+            title: 'Ngày xuất bản',
+            dataIndex: 'publishedAt',
+            width: 150,
+            render: (publishedAt) => <span className="text-sm text-gray-500">{formatDate(publishedAt)}</span>,
+            sorter: (a, b) => new Date(a.publishedAt || 0) - new Date(b.publishedAt || 0)
         },
         {
-            headerName: 'Thao Tác',
-            width: '100px',
-            headerClassName: 'justify-end pr-0 text-right',
-            cellRenderer: (blog) => (
+            title: 'Thao Tác',
+            key: 'action',
+            width: 100,
+            align: 'right',
+            render: (_, blog) => (
                 <div className="flex items-center justify-end gap-1 opacity-100 transition-opacity">
                     <ActionIconButton 
                         icon={FiEdit2} 
@@ -102,11 +108,14 @@ export default function AdminBlogTable({ blogs, loading, handleOpenModal, handle
     ], [handleOpenModal, handleDelete]);
 
     return (
-        <DataTable 
-            columns={columns}
-            data={blogs}
-            loading={loading}
-            emptyMessage="Không tìm thấy bài viết nào"
-        />
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+            <AntTable 
+                columns={columns}
+                dataSource={blogs}
+                loading={loading}
+                emptyMessage="Không tìm thấy bài viết nào"
+                pagination={false}
+            />
+        </div>
     );
 }

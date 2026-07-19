@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { homeApi } from './api/homeApi';
-import { sharedApi } from '@/services/sharedApi';
+import { useHomeData } from '@/pages/Customer/Home/hooks/useHomeData';
+import { useCategories } from '@/hooks/queries/useMasterData';
+import { useProducts } from '@/hooks/queries/useProducts';
 import HeroSlider from './components/HeroSlider';
 import CategorySlider from './components/CategorySlider';
 import PromoBanner from './components/PromoBanner';
@@ -96,60 +96,18 @@ const ProductSection = ({ subtitle, title, loading, products, bgColor = "bg-whit
 export default function Home() {
     const navigate = useNavigate();
 
-    const [categories, setCategories] = useState([]);
-    const [bestSellers, setBestSellers] = useState([]);
-    const [newProducts, setNewProducts] = useState([]);
-    const [homeBlocks, setHomeBlocks] = useState({});
-    const [loading, setLoading] = useState(true);
-
-    // Fetch Data using async/await for cleaner logic
-    useEffect(() => {
-        const fetchHomeData = async () => {
-            try {
-                const [catRes, bestRes, newRes, homeRes] = await Promise.all([
-                    sharedApi.getCategories(),
-                    homeApi.getBestSellers(8),
-                    sharedApi.getProducts({ limit: 8, sort: 'newest' }),
-                    homeApi.getHomeContent()
-                ]);
-
-                // Helper to extract data regardless of response format
-                const extractData = (res) => {
-                    if (!res) return [];
-                    if (Array.isArray(res)) return res;
-                    return res.data || [];
-                };
-
-                setCategories(extractData(catRes));
-                const bestSellersData = extractData(bestRes);
-                setBestSellers(bestSellersData);
-                
-                // Fallback newProducts to bestSellers if empty
-                const newProductsData = extractData(newRes);
-                setNewProducts(newProductsData.length > 0 ? newProductsData : bestSellersData.slice(0, 4));
-
-                // Process home blocks gracefully
-                const blockMap = {};
-                const blocks = extractData(homeRes);
-                
-                blocks.forEach(b => {
-                    try {
-                        blockMap[b.blockKey] = { ...b, data: JSON.parse(b.dataJson) };
-                    } catch {
-                        blockMap[b.blockKey] = { ...b, data: {} };
-                    }
-                });
-                
-                setHomeBlocks(blockMap);
-            } catch (error) {
-                console.error("Lỗi khi tải dữ liệu trang chủ:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchHomeData();
-    }, []);
+    // Fetch data using React Query hooks
+    const { data: categories = [] } = useCategories();
+    
+    // Instead of useProducts with sort='newest', we'll rely on the existing hooks.
+    // If useProducts has an issue, it's better to fetch bestSellers and newProducts through useHomeData.
+    // Let's use useHomeData for everything to be consistent with the backend changes.
+    const { data: homeData, isLoading: loading } = useHomeData();
+    const { 
+        bestSellers = [], 
+        newProducts = [], 
+        homeBlocks = {} 
+    } = homeData || {};
 
     // ── Prepare dynamic block data ──
     const heroData = homeBlocks['hero']?.data || {};

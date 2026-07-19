@@ -9,5 +9,7 @@ export const checkoutApi = {
     
     getShippingFee: (params) => api.get('/locations/shipping-fee', { params }),
     
-    validateCoupon: (data) => api.post('/coupons/validate', data)
+    validateCoupon: (data) => api.post('/coupons/validate', data),
+
+    getPublicCoupons: () => api.get('/coupons/public')
 };
