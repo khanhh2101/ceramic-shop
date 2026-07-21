@@ -20,8 +20,9 @@ export const useAdminLedger = (params, options = {}) => {
     queryKey: ['admin', 'inventory', 'ledger', params],
     queryFn: async () => {
       const res = await adminInventoryApi.getLedger(params);
-      // axios response: res.data = response body = { data: [...], totalCount: N, page, pageSize }
-      const body = res?.data || {};
+      // res is already the response body (due to api.js interceptor)
+      // Server returns PagedResponse { data: [...], totalCount, page, pageSize }
+      const body = res || {};
       return z.object({
         items: z.array(z.any()).catch([]),
         totalCount: z.number().catch(0),

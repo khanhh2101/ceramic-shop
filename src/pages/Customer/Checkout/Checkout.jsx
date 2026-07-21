@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useForm } from 'react-hook-form';
-import { selectSelectedCartItems, selectSelectedCartTotal, selectCartLoading, removeCartItem, removeGuestCartItem, clearSelection } from '@/store/slices/cartSlice';
+import { selectSelectedCartItems, selectSelectedCartTotal, selectCartLoading, removeCartItem, removeGuestCartItem, clearSelection, selectSelectedItemIds } from '@/store/slices/cartSlice';
 import { selectUser, selectIsAuthenticated } from '@/store/slices/authSlice';
 import { orderService } from '@/services';
 import { checkoutApi } from './api/checkoutApi';
@@ -22,6 +22,7 @@ export default function Checkout() {
     const user = useSelector(selectUser);
     const isAuth = useSelector(selectIsAuthenticated);
     const isCartLoading = useSelector(selectCartLoading);
+    const selectedItemIds = useSelector(selectSelectedItemIds);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [shippingFee, setShippingFee] = useState(0);
@@ -237,11 +238,12 @@ export default function Checkout() {
     }, [selectedProvince, selectedDistrict, selectedWard, isNewStructure]);
 
     useEffect(() => {
-        if (!isCartLoading && cartItems.length === 0) {
-            toast.error('Giỏ hàng trống!');
+        // If the user has absolutely no selected items in localStorage, kick them out
+        if (selectedItemIds.length === 0) {
+            toast.error('Giỏ hàng trống hoặc chưa chọn sản phẩm!');
             navigate('/shop');
         }
-    }, [cartItems, isCartLoading, navigate]);
+    }, [selectedItemIds, navigate]);
 
     const handleSelectAddress = async (addr) => {
         await applyAddressToForm(addr, provinces);
@@ -397,7 +399,14 @@ export default function Checkout() {
         }
     };
 
-    if (isCartLoading || cartItems.length === 0) return null;
+    // Wait for the full cart items to be loaded before rendering the checkout form
+    if (isCartLoading || cartItems.length === 0 || cartItems.length !== selectedItemIds.length) {
+        return (
+            <div className="bg-[#faf7f4] min-h-screen flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-[#c4a882] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        );
+    }
 
     const finalShippingFee = Math.max(0, shippingFee - shippingDiscountAmount);
     const grandTotal = Math.max(0, cartTotal - orderDiscountAmount + finalShippingFee);

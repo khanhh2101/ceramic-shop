@@ -109,13 +109,27 @@ function saveGuestCart(items) {
     localStorage.setItem(GUEST_CART_KEY, JSON.stringify(items));
 }
 
+const SELECTED_CART_KEY = 'selectedCartItems';
+
+function loadSelectedItems() {
+    try {
+        return JSON.parse(localStorage.getItem(SELECTED_CART_KEY)) || [];
+    } catch {
+        return [];
+    }
+}
+
+function saveSelectedItems(items) {
+    localStorage.setItem(SELECTED_CART_KEY, JSON.stringify(items));
+}
+
 // ── Slice ──
 const cartSlice = createSlice({
     name: 'cart',
     initialState: {
         items: [], // Server cart (khi đã login)
         guestItems: loadGuestCart(), // Local cart (khi chưa login)
-        selectedItemIds: [], // Chứa id (khi login) hoặc itemKey (khi guest)
+        selectedItemIds: loadSelectedItems(), // Chứa id (khi login) hoặc itemKey (khi guest)
         loading: false,
         error: null,
     },
@@ -148,6 +162,7 @@ const cartSlice = createSlice({
 
             if (!state.selectedItemIds.includes(itemKey)) {
                 state.selectedItemIds.push(itemKey);
+                saveSelectedItems(state.selectedItemIds);
             }
 
             saveGuestCart(state.guestItems);
@@ -175,6 +190,7 @@ const cartSlice = createSlice({
             state.selectedItemIds = state.selectedItemIds.filter(
                 (id) => id !== action.payload,
             );
+            saveSelectedItems(state.selectedItemIds);
             saveGuestCart(state.guestItems);
         },
 
@@ -182,6 +198,7 @@ const cartSlice = createSlice({
             state.guestItems = [];
             state.selectedItemIds = [];
             localStorage.removeItem(GUEST_CART_KEY);
+            localStorage.removeItem(SELECTED_CART_KEY);
         },
 
         syncCartWithProducts(state, action) {
@@ -219,6 +236,7 @@ const cartSlice = createSlice({
                                 state.selectedItemIds.filter(
                                     (id) => id !== item.itemKey,
                                 );
+                            saveSelectedItems(state.selectedItemIds);
                         } else if (item.quantity > freshProduct.stockQuantity) {
                             item.quantity = freshProduct.stockQuantity;
                         }
@@ -261,6 +279,7 @@ const cartSlice = createSlice({
                                 state.selectedItemIds.filter(
                                     (id) => id !== itemId,
                                 );
+                            saveSelectedItems(state.selectedItemIds);
                         } else if (item.quantity > freshProduct.stockQuantity) {
                             item.quantity = freshProduct.stockQuantity;
                         }
@@ -274,6 +293,7 @@ const cartSlice = createSlice({
             state.guestItems = [];
             state.selectedItemIds = [];
             localStorage.removeItem(GUEST_CART_KEY);
+            localStorage.removeItem(SELECTED_CART_KEY);
         },
 
         toggleSelectItem(state, action) {
@@ -285,6 +305,7 @@ const cartSlice = createSlice({
             } else {
                 state.selectedItemIds.push(id);
             }
+            saveSelectedItems(state.selectedItemIds);
         },
 
         toggleSelectAll(state, action) {
@@ -322,10 +343,12 @@ const cartSlice = createSlice({
                     state.selectedItemIds = validItems.map((i) => i.itemKey);
                 }
             }
+            saveSelectedItems(state.selectedItemIds);
         },
 
         clearSelection(state) {
             state.selectedItemIds = [];
+            saveSelectedItems(state.selectedItemIds);
         },
     },
 
@@ -357,6 +380,7 @@ const cartSlice = createSlice({
 
                 if (!state.selectedItemIds.includes(payloadData.id)) {
                     state.selectedItemIds.push(payloadData.id);
+                    saveSelectedItems(state.selectedItemIds);
                 }
             })
             .addCase(updateCartItem.fulfilled, (state, action) => {
@@ -375,6 +399,7 @@ const cartSlice = createSlice({
                 state.selectedItemIds = state.selectedItemIds.filter(
                     (id) => id !== action.payload,
                 );
+                saveSelectedItems(state.selectedItemIds);
             })
             .addCase(mergeCart.fulfilled, (state, action) => {
                 state.items = Array.isArray(action.payload)
@@ -383,12 +408,14 @@ const cartSlice = createSlice({
                 state.guestItems = [];
                 state.selectedItemIds = [];
                 localStorage.removeItem(GUEST_CART_KEY);
+                localStorage.removeItem(SELECTED_CART_KEY);
             })
             .addCase(logout, (state) => {
                 state.items = [];
                 state.guestItems = [];
                 state.selectedItemIds = [];
                 localStorage.removeItem(GUEST_CART_KEY);
+                localStorage.removeItem(SELECTED_CART_KEY);
             });
     },
 });

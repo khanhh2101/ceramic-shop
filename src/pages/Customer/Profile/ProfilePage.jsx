@@ -303,7 +303,7 @@ export default function ProfilePage() {
 
             {/* Address Modal */}
             <Modal isOpen={isAddressModalOpen} onClose={() => setIsAddressModalOpen(false)}>
-                <div className="p-6 md:p-8 bg-white relative">
+                <div className="p-6 md:p-8 bg-white relative overflow-y-auto custom-scrollbar flex-1">
                     <button 
                         onClick={() => setIsAddressModalOpen(false)}
                         className="absolute top-6 right-6 text-gray-400 hover:text-gray-800 transition-colors"
