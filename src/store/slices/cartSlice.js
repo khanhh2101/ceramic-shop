@@ -217,19 +217,22 @@ const cartSlice = createSlice({
                 );
 
                 if (freshProduct && item.product) {
+                    const freshPrice = freshProduct.price ?? freshProduct.Price;
+                    const freshStock = freshProduct.stockQuantity ?? freshProduct.StockQuantity ?? 0;
+                    const freshIsActive = freshProduct.isActive ?? freshProduct.IsActive ?? true;
+                    
                     if (
-                        item.product.price !== freshProduct.price ||
-                        item.product.stockQuantity !==
-                            freshProduct.stockQuantity ||
-                        item.product.isActive !== freshProduct.isActive ||
-                        item.product.name !== freshProduct.name
+                        item.product.price !== freshPrice ||
+                        item.product.stockQuantity !== freshStock ||
+                        item.product.isActive !== freshIsActive ||
+                        item.product.name !== (freshProduct.name ?? freshProduct.Name)
                     ) {
-                        item.product = { ...item.product, ...freshProduct };
+                        item.product = { ...item.product, ...freshProduct, price: freshPrice, stockQuantity: freshStock, isActive: freshIsActive };
 
                         // Xử lý nếu hết hàng hoặc bị ẩn
                         if (
-                            !freshProduct.isActive ||
-                            freshProduct.stockQuantity <= 0
+                            !freshIsActive ||
+                            freshStock <= 0
                         ) {
                             // Bỏ chọn sản phẩm khỏi danh sách thanh toán nếu không hợp lệ
                             state.selectedItemIds =
@@ -237,8 +240,8 @@ const cartSlice = createSlice({
                                     (id) => id !== item.itemKey,
                                 );
                             saveSelectedItems(state.selectedItemIds);
-                        } else if (item.quantity > freshProduct.stockQuantity) {
-                            item.quantity = freshProduct.stockQuantity;
+                        } else if (item.quantity > freshStock) {
+                            item.quantity = freshStock;
                         }
                         updatedGuest = true;
                     }
@@ -257,31 +260,34 @@ const cartSlice = createSlice({
                 );
 
                 if (freshProduct) {
+                    const freshPrice = freshProduct.price ?? freshProduct.Price;
+                    const freshStock = freshProduct.stockQuantity ?? freshProduct.StockQuantity ?? 0;
+                    const freshIsActive = freshProduct.isActive ?? freshProduct.IsActive ?? true;
+
                     if (
-                        item.price !== freshProduct.price ||
-                        item.product?.price !== freshProduct.price ||
-                        item.product?.stockQuantity !==
-                            freshProduct.stockQuantity ||
-                        item.product?.isActive !== freshProduct.isActive
+                        item.price !== freshPrice ||
+                        item.product?.price !== freshPrice ||
+                        item.product?.stockQuantity !== freshStock ||
+                        item.product?.isActive !== freshIsActive
                     ) {
-                        item.price = freshProduct.price;
+                        item.price = freshPrice;
                         if (item.product) {
-                            item.product = { ...item.product, ...freshProduct };
+                            item.product = { ...item.product, ...freshProduct, price: freshPrice, stockQuantity: freshStock, isActive: freshIsActive };
                         }
 
                         // Xử lý nếu hết hàng hoặc bị ẩn
                         const itemId = item.id || item.Id;
                         if (
-                            !freshProduct.isActive ||
-                            freshProduct.stockQuantity <= 0
+                            !freshIsActive ||
+                            freshStock <= 0
                         ) {
                             state.selectedItemIds =
                                 state.selectedItemIds.filter(
                                     (id) => id !== itemId,
                                 );
                             saveSelectedItems(state.selectedItemIds);
-                        } else if (item.quantity > freshProduct.stockQuantity) {
-                            item.quantity = freshProduct.stockQuantity;
+                        } else if (item.quantity > freshStock) {
+                            item.quantity = freshStock;
                         }
                     }
                 }

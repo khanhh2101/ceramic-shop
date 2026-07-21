@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { orderApi } from './api/orderApi';
+import { useOrderTrack } from './hooks/useOrdersQueries';
 import { FiX } from 'react-icons/fi';
 import OrderTimeline from './components/OrderTimeline';
 import './Orders.css';
@@ -8,33 +7,12 @@ import { getErrorMessage } from '@/utils';
 
 export default function OrderTrackPage() {
     const { trackingToken } = useParams();
-    const [order, setOrder] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [isExpired, setIsExpired] = useState(false);
+    const { data: order, isLoading: loading, error: queryError } = useOrderTrack(trackingToken);
 
-    useEffect(() => {
-        if (trackingToken) {
-            fetchOrderTrack();
-        }
-    }, [trackingToken]);
-
-    const fetchOrderTrack = async () => {
-        setLoading(true);
-        try {
-            const res = await orderApi.getByTrackingToken(trackingToken);
-            setOrder(res?.data);
-        } catch (err) {
-            if (err.response?.status === 410) {
-                setIsExpired(true);
-                setError('Đường dẫn theo dõi đơn hàng đã hết hạn.');
-            } else {
-                setError(getErrorMessage(err, 'Không tìm thấy thông tin đơn hàng hoặc đường dẫn không hợp lệ.'));
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
+    const isExpired = queryError?.response?.status === 410;
+    const error = queryError 
+        ? (isExpired ? 'Đường dẫn theo dõi đơn hàng đã hết hạn.' : getErrorMessage(queryError, 'Không tìm thấy thông tin đơn hàng hoặc đường dẫn không hợp lệ.'))
+        : null;
 
     if (loading) {
         return <div className="min-h-screen flex items-center justify-center text-[#888]">Đang tải thông tin đơn hàng...</div>;

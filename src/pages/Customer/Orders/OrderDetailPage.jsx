@@ -15,9 +15,7 @@ export default function OrderDetailPage() {
     const { orderCode } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const [order, setOrder] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const { data: order, isLoading: loading, error, refetch } = useOrderDetails(orderCode);
     const [reordering, setReordering] = useState(false);
 
     // Review Modal States
@@ -48,29 +46,11 @@ export default function OrderDetailPage() {
             await orderApi.createReview(payload);
             toast.success('Đánh giá của bạn đã được gửi và đang chờ duyệt!');
             setReviewModalOpen(false);
-            fetchOrderDetail(); // Refresh order details
-        } catch (err) {
+            refetch(); // Refresh order details
+        } catch (_err) {
             /* toast handled by api */
         } finally {
             setSubmittingReview(false);
-        }
-    };
-
-    useEffect(() => {
-        if (orderCode) {
-            fetchOrderDetail();
-        }
-    }, [orderCode]);
-
-    const fetchOrderDetail = async () => {
-        setLoading(true);
-        try {
-            const res = await orderApi.getByCode(orderCode);
-            setOrder(res?.data);
-        } catch (err) {
-            setError(getErrorMessage(err, 'Không thể tải thông tin đơn hàng'));
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -91,7 +71,7 @@ export default function OrderDetailPage() {
                         color: item.color 
                     })).unwrap();
                     addedCount++;
-                } catch (err) {
+                } catch (_err) {
                     outOfStockCount++;
                 }
             } else {

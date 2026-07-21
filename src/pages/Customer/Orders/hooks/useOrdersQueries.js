@@ -32,3 +32,17 @@ export const useOrderDetails = (orderCode, options = {}) => {
     ...options
   });
 };
+
+export const useOrderTrack = (trackingToken, options = {}) => {
+  return useQuery({
+    queryKey: ['orders', 'track', trackingToken],
+    queryFn: async () => {
+      const res = await orderApi.getByTrackingToken(trackingToken);
+      const data = res?.data || res;
+      return OrderItemSchema.parse(data || {});
+    },
+    enabled: !!trackingToken,
+    ...QUERY_CONFIGS.CRITICAL,
+    ...options
+  });
+};

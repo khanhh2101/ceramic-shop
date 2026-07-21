@@ -165,7 +165,14 @@ const authSlice = createSlice({
     // Register
     builder
       .addCase(register.pending, handleAuthPending)
-      .addCase(register.fulfilled, handleAuthFulfilled)
+      .addCase(register.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload && action.payload.accessToken) {
+          state.user = action.payload.user;
+          state.isAuthenticated = true;
+          saveTokens(action.payload);
+        }
+      })
       .addCase(register.rejected, handleAuthRejected);
 
     // Login

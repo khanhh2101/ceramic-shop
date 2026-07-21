@@ -6,7 +6,9 @@ import { selectSelectedCartItems, selectSelectedCartTotal, selectCartLoading, re
 import { selectUser, selectIsAuthenticated } from '@/store/slices/authSlice';
 import { orderService } from '@/services';
 import { checkoutApi } from './api/checkoutApi';
-import { profileApi } from '../Profile/api/profileApi';
+import { useAddresses } from '../Profile/hooks/useProfileQueries';
+import { useProvinces, useDistricts, useWards } from '@/hooks/queries/useLocations';
+import { usePublicCoupons } from './hooks/useCheckoutQueries';
 import Modal from '@/components/common/Modal';
 import toast from 'react-hot-toast';
 import CheckoutForm from './components/CheckoutForm';
@@ -32,15 +34,14 @@ export default function Checkout() {
     const [appliedCoupon, setAppliedCoupon] = useState('');
     const [orderDiscountAmount, setOrderDiscountAmount] = useState(0);
     const [shippingDiscountAmount, setShippingDiscountAmount] = useState(0);
-    const [publicCoupons, setPublicCoupons] = useState([]);
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
+    // React Query Hooks
+    const { data: publicCoupons = [] } = usePublicCoupons();
+    const { data: savedAddresses = [] } = useAddresses({ enabled: isAuth });
+
     // Location States
-    const [provinces, setProvinces] = useState([]);
-    const [districts, setDistricts] = useState([]);
-    const [wards, setWards] = useState([]);
     const [isNewStructure, setIsNewStructure] = useState(false);
-    const [savedAddresses, setSavedAddresses] = useState([]);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const [isEnteringNewAddress, setIsEnteringNewAddress] = useState(false);
     const [selectedAddress, setSelectedAddress] = useState(null);
@@ -66,6 +67,16 @@ export default function Checkout() {
     const selectedProvince = watch('province');
     const selectedDistrict = watch('district');
     const selectedWard = watch('ward');
+
+    const { data: provinces = [] } = useProvinces(isNewStructure);
+    const { data: districts = [] } = useDistricts(selectedProvince, { enabled: !isNewStructure });
+    const { data: wards = [] } = useWards(
+        isNewStructure ? selectedProvince : selectedDistrict, 
+        isNewStructure,
+        { enabled: !!(isNewStructure ? selectedProvince : selectedDistrict) }
+    );
+
+    const [isInitialized, setIsInitialized] = useState(false);
 
     const applyAddressToForm = async (addr, loadedProvinces) => {
         setSelectedAddress(addr);
@@ -113,105 +124,27 @@ export default function Checkout() {
         setValue('ward', wCode || '', { shouldValidate: !!wCode });
     };
 
-    // Fetch Initial Data ONCE on mount
     useEffect(() => {
-        const fetchInitialData = async () => {
-            try {
-                const promises = [
-                    checkoutApi.getPublicCoupons()
-                ];
-                if (isAuth) {
-                    promises.push(profileApi.getAddresses());
-                }
-
-                const resArray = await Promise.all(promises);
-                const couponsRes = resArray[0];
-                const addrRes = isAuth ? resArray[1] : null;
-                
-                if (couponsRes?.data) {
-                    setPublicCoupons(couponsRes.data);
-                }
-                
-                let defaultAddr = null;
-                if (addrRes) {
-                    let addresses = [];
-                    if (Array.isArray(addrRes)) addresses = addrRes;
-                    else if (addrRes?.data && Array.isArray(addrRes.data)) addresses = addrRes.data;
-                    else if (addrRes?.data?.data && Array.isArray(addrRes.data.data)) addresses = addrRes.data.data;
-                    
-                    setSavedAddresses(addresses);
-                    defaultAddr = addresses.find(a => a.isDefault);
-                    if (!defaultAddr && addresses.length > 0) {
-                        defaultAddr = addresses[0];
-                    }
-                }
-
-                // Fetch provinces using the structure of the default address if any, otherwise default to false
-                const isNew = defaultAddr ? !defaultAddr.district : false;
-                setIsNewStructure(isNew);
-                
-                const provRes = await checkoutApi.getProvinces(isNew);
-                const loadedProvinces = provRes?.data || [];
-                if (loadedProvinces.length > 0) {
-                    setProvinces(loadedProvinces);
-                }
-
-                if (defaultAddr) {
-                    await applyAddressToForm(defaultAddr, loadedProvinces);
-                    setIsEnteringNewAddress(false);
-                } else {
-                    setValue('province', '');
-                    setValue('district', '');
-                    setValue('ward', '');
-                    setIsEnteringNewAddress(true);
-                }
-            } catch (error) {
-                console.error("Error fetching initial data:", error);
-                toast.error('Không thể tải dữ liệu khởi tạo');
-            }
-        };
-        fetchInitialData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isAuth, user]);
-
-    // Fetch Provinces when isNewStructure changes
-    useEffect(() => {
-        checkoutApi.getProvinces(isNewStructure)
-            .then(res => setProvinces(res?.data || []))
-            .catch(e => console.error(e));
-    }, [isNewStructure]);
-
-    // Fetch Districts (if Old Structure) or Wards (if New Structure) when Province changes
-    useEffect(() => {
-        if (!selectedProvince) {
-            setDistricts([]);
-            setWards([]);
+        if (!isAuth) {
+            if (!isInitialized) setIsInitialized(true);
             return;
         }
-
-        if (isNewStructure) {
-            checkoutApi.getWards(selectedProvince, true)
-                .then(res => setWards(res?.data || []))
-                .catch(() => toast.error('Không thể tải Phường/Xã'));
-            setDistricts([]);
-        } else {
-            checkoutApi.getDistricts(selectedProvince)
-                .then(res => setDistricts(res?.data || []))
-                .catch(() => toast.error('Không thể tải Quận/Huyện'));
-            setWards([]);
+        
+        if (savedAddresses.length > 0 && provinces.length > 0 && !isInitialized) {
+            const defaultAddr = savedAddresses.find(a => a.isDefault) || savedAddresses[0];
+            const isNew = !defaultAddr.district;
+            setIsNewStructure(isNew);
+            applyAddressToForm(defaultAddr, provinces);
+            setIsEnteringNewAddress(false);
+            setIsInitialized(true);
+        } else if (savedAddresses.length === 0 && provinces.length > 0 && !isInitialized) {
+            setIsInitialized(true);
+            setValue('province', '');
+            setValue('district', '');
+            setValue('ward', '');
+            setIsEnteringNewAddress(true);
         }
-    }, [selectedProvince, isNewStructure]);
-
-    // Fetch Wards when District changes (Old Structure)
-    useEffect(() => {
-        if (!isNewStructure && selectedDistrict) {
-            checkoutApi.getWards(selectedDistrict, false)
-                .then(res => setWards(res?.data || []))
-                .catch(() => toast.error('Không thể tải Phường/Xã'));
-        } else if (!isNewStructure) {
-            setWards([]);
-        }
-    }, [selectedDistrict, isNewStructure]);
+    }, [savedAddresses, provinces, isInitialized, isAuth, setValue]);
 
     // Calculate dynamic shipping fee
     useEffect(() => {
@@ -238,12 +171,12 @@ export default function Checkout() {
     }, [selectedProvince, selectedDistrict, selectedWard, isNewStructure]);
 
     useEffect(() => {
-        // If the user has absolutely no selected items in localStorage, kick them out
-        if (selectedItemIds.length === 0) {
-            toast.error('Giỏ hàng trống hoặc chưa chọn sản phẩm!');
-            navigate('/shop');
+        // If the cart has finished loading and there are no valid cart items to checkout, kick them out
+        if (!isCartLoading && cartItems.length === 0) {
+            toast.error('Giỏ hàng trống hoặc chưa chọn sản phẩm hợp lệ!');
+            navigate('/cart');
         }
-    }, [selectedItemIds, navigate]);
+    }, [isCartLoading, cartItems.length, navigate]);
 
     const handleSelectAddress = async (addr) => {
         await applyAddressToForm(addr, provinces);
@@ -400,7 +333,7 @@ export default function Checkout() {
     };
 
     // Wait for the full cart items to be loaded before rendering the checkout form
-    if (isCartLoading || cartItems.length === 0 || cartItems.length !== selectedItemIds.length) {
+    if (isCartLoading || cartItems.length === 0) {
         return (
             <div className="bg-[#faf7f4] min-h-screen flex items-center justify-center">
                 <div className="w-8 h-8 border-4 border-[#c4a882] border-t-transparent rounded-full animate-spin"></div>

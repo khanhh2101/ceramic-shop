@@ -1,39 +1,13 @@
-import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { selectWishlistIds } from '@/store/slices/wishlistSlice';
-import { wishlistApi } from './api/wishlistApi';
-import toast from 'react-hot-toast';
+import { useWishlistProducts } from './hooks/useWishlistQueries';
 import ProductCard from '@/components/common/ProductCard';
 import WishlistHeroBanner from './components/WishlistHeroBanner';
 import WishlistEmptyState from './components/WishlistEmptyState';
 
 export default function Wishlist() {
     const wishlistIds = useSelector(selectWishlistIds);
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchWishlistProducts = async () => {
-            if (!wishlistIds || wishlistIds.length === 0) {
-                setProducts([]);
-                setLoading(false);
-                return;
-            }
-
-            setLoading(true);
-            try {
-                const fetchedProducts = await wishlistApi.getWishlistProducts(wishlistIds);
-                setProducts(fetchedProducts);
-            } catch (error) {
-                console.error("Lỗi khi tải wishlist:", error);
-                toast.error('Không thể tải danh sách yêu thích');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchWishlistProducts();
-    }, [wishlistIds]);
+    const { data: products = [], isLoading: loading } = useWishlistProducts(wishlistIds);
 
     return (
         <div className="bg-white min-h-screen pb-24">

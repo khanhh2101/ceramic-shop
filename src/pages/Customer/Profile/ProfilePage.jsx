@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { selectUser, updateCurrentUser } from '@/store/slices/authSlice';
 import toast from 'react-hot-toast';
 import Modal from '@/components/common/Modal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { checkoutApi } from '../Checkout/api/checkoutApi';
-
+import { useAddresses } from './hooks/useProfileQueries';
+import { useProvinces, useDistricts, useWards } from '@/hooks/queries/useLocations';
 import { profileApi } from './api/profileApi';
 import ProfileSidebar from './components/ProfileSidebar';
 import ProfileInfo from './components/ProfileInfo';
 import ProfilePassword from './components/ProfilePassword';
 import ProfileAddress from './components/ProfileAddress';
 import './Profile.css';
-import { getErrorMessage } from '@/utils';
 
 export default function ProfilePage() {
     const dispatch = useDispatch();
@@ -31,14 +30,20 @@ export default function ProfilePage() {
     const queryClient = useQueryClient();
     const { register: regAddr, handleSubmit: handleAddrSubmit, reset: resetAddr, formState: { errors: errAddr }, watch: watchAddr, setValue: setAddrValue } = useForm();
 
-    const [provinces, setProvinces] = useState([]);
-    const [districts, setDistricts] = useState([]);
-    const [wards, setWards] = useState([]);
-    const [isNewStructure, setIsNewStructure] = useState(false);
-
     const selectedProvince = watchAddr('provinceCode');
     const selectedDistrict = watchAddr('districtCode');
     const selectedWard = watchAddr('wardCode');
+    
+    const [isNewStructure, setIsNewStructure] = useState(false);
+
+    // Use React Query for Locations (only fetch when modal is open)
+    const { data: provinces = [] } = useProvinces(isNewStructure, { enabled: isAddressModalOpen });
+    const { data: districts = [] } = useDistricts(selectedProvince, { enabled: isAddressModalOpen && !isNewStructure });
+    const { data: wards = [] } = useWards(
+        isNewStructure ? selectedProvince : selectedDistrict, 
+        isNewStructure, 
+        { enabled: isAddressModalOpen && !!(isNewStructure ? selectedProvince : selectedDistrict) }
+    );
 
     // Form profile
     const { register: regProfile, handleSubmit: handleProfileSubmit, formState: { errors: errProfile }, reset: resetProfile } = useForm({
@@ -64,41 +69,7 @@ export default function ProfilePage() {
         }
     }, [user, resetProfile]);
 
-    useEffect(() => {
-        if (isAddressModalOpen) {
-            checkoutApi.getProvinces(isNewStructure).then(res => setProvinces(res.data || []));
-        }
-    }, [isNewStructure, isAddressModalOpen]);
-
-    useEffect(() => {
-        if (selectedProvince && isAddressModalOpen) {
-            if (isNewStructure) {
-                checkoutApi.getWards(selectedProvince, true).then(res => setWards(res?.data || []));
-                setDistricts([]);
-            } else {
-                checkoutApi.getDistricts(selectedProvince).then(res => setDistricts(res?.data || []));
-                setWards([]);
-            }
-        } else {
-            setDistricts([]);
-            setWards([]);
-        }
-    }, [selectedProvince, isNewStructure, isAddressModalOpen]);
-
-    useEffect(() => {
-        if (!isNewStructure && selectedDistrict && isAddressModalOpen) {
-            checkoutApi.getWards(selectedDistrict, false).then(res => setWards(res?.data || []));
-        } else if (!isNewStructure) {
-            setWards([]);
-        }
-    }, [selectedDistrict, isNewStructure, isAddressModalOpen]);
-
-    const { data: addresses = [], isLoading: isLoadingAddresses } = useQuery({
-        queryKey: ['addresses'],
-        queryFn: async () => {
-            const res = await profileApi.getAddresses();
-            return res?.data || res || [];
-        },
+    const { data: addresses = [] } = useAddresses({
         enabled: activeTab === 'address'
     });
 
@@ -124,7 +95,7 @@ export default function ProfilePage() {
             await profileApi.updateProfile(payload);
             dispatch(updateCurrentUser({ ...user, ...payload }));
             toast.success('Cập nhật hồ sơ thành công!');
-        } catch (error) {
+        } catch (_error) {
             /* toast handled by api */
         } finally {
             setIsUpdating(false);
@@ -141,7 +112,7 @@ export default function ProfilePage() {
             });
             toast.success('Đổi mật khẩu thành công!');
             resetPass();
-        } catch (error) {
+        } catch (_error) {
             /* toast handled by api */
         } finally {
             setIsUpdating(false);

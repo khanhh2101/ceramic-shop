@@ -17,10 +17,15 @@ export default function RegisterPage() {
     const password = watch('password');
 
     const onSubmit = async (data) => {
-        const result = await dispatch(registerAction(data));
+        const { confirmPassword, ...registerData } = data;
+        const result = await dispatch(registerAction(registerData));
         if (!result.error) {
             toast.success('Đăng ký thành công! 🎉');
-            navigate('/auth/login');
+            if (result.payload && result.payload.accessToken) {
+                navigate('/');
+            } else {
+                navigate('/auth/login');
+            }
         } else {
             toast.error(result.payload || 'Đăng ký thất bại');
         }
