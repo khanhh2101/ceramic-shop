@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
@@ -14,11 +14,18 @@ export default function RegisterPage() {
     const [showPass, setShowPass] = useState(false);
     const [showConfirmPass, setShowConfirmPass] = useState(false);
 
-    const { register, handleSubmit, formState: { errors } } = useForm();
+    const { register, handleSubmit, formState: { errors }, watch, trigger } = useForm({ mode: 'onChange' });
+    const password = watch('password');
+
+    // Trigger validation for confirmPassword whenever password changes
+    useEffect(() => {
+        if (password) {
+            trigger('confirmPassword');
+        }
+    }, [password, trigger]);
 
     const onSubmit = async (data) => {
-        const { confirmPassword, ...registerData } = data;
-        const result = await dispatch(registerAction(registerData));
+        const result = await dispatch(registerAction(data));
         if (!result.error) {
             toast.success('Đăng ký thành công! 🎉');
             if (result.payload && result.payload.accessToken) {
@@ -109,7 +116,7 @@ export default function RegisterPage() {
                             placeholder="••••••••"
                             {...register('confirmPassword', {
                                 required: 'Vui lòng xác nhận mật khẩu',
-                                validate: (value, formValues) => value === formValues.password || 'Mật khẩu không khớp'
+                                validate: value => value === password || 'Mật khẩu không khớp'
                             })}
                         />
                         <button
