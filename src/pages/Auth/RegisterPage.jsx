@@ -12,9 +12,9 @@ export default function RegisterPage() {
     const navigate = useNavigate();
     const loading = useSelector(selectAuthLoading);
     const [showPass, setShowPass] = useState(false);
+    const [showConfirmPass, setShowConfirmPass] = useState(false);
 
-    const { register, handleSubmit, formState: { errors }, watch } = useForm();
-    const password = watch('password');
+    const { register, handleSubmit, formState: { errors } } = useForm();
 
     const onSubmit = async (data) => {
         const { confirmPassword, ...registerData } = data;
@@ -104,14 +104,21 @@ export default function RegisterPage() {
                     <div className="relative">
                         <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#aaa]" />
                         <input
-                            type="password"
-                            className="w-full p-3 pl-11 border border-[#ddd] rounded-sm text-[14px] outline-none focus:border-[#c4a882] transition-colors bg-[#faf7f4] focus:bg-white"
+                            type={showConfirmPass ? 'text' : 'password'}
+                            className="w-full p-3 pl-11 pr-11 border border-[#ddd] rounded-sm text-[14px] outline-none focus:border-[#c4a882] transition-colors bg-[#faf7f4] focus:bg-white"
                             placeholder="••••••••"
                             {...register('confirmPassword', {
                                 required: 'Vui lòng xác nhận mật khẩu',
-                                validate: value => value === password || 'Mật khẩu không khớp'
+                                validate: (value, formValues) => value === formValues.password || 'Mật khẩu không khớp'
                             })}
                         />
+                        <button
+                            type="button"
+                            onClick={() => setShowConfirmPass(!showConfirmPass)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#aaa] hover:text-[#1a1a1a]"
+                        >
+                            {showConfirmPass ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                        </button>
                     </div>
                     {errors.confirmPassword && <p className="text-red-500 text-[12px] mt-1">{errors.confirmPassword.message}</p>}
                 </div>
