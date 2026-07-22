@@ -165,11 +165,11 @@ export default function Navbar() {
                                     )}
                                 </button> */}
 
-                                {/* Dropdown */}
-                                {/* {userMenuOpen && (
+                        {/* Dropdown */}
+                        {/* {userMenuOpen && (
                                     <>
                                         {/* Backdrop */}
-                                        {/* <div
+                        {/* <div
                                             className="fixed inset-0 z-10"
                                             onClick={() =>
                                                 setUserMenuOpen(false)
@@ -233,85 +233,82 @@ export default function Navbar() {
                                         </div>
                                     </>
                                 )} */}
-                            </div>
-                        {/* ) : (
+                    </div>
+                    {/* ) : (
                             <Link
                                 to="/auth/login"
                                 className="btn-primary btn-sm hidden sm:flex"
                             >
                                 Đăng nhập
                             </Link>
-                        )} */} 
+                        )} */}
 
-                        {/* Mobile menu button */}
-                        <button
-                            className="lg:hidden p-2 rounded-xl hover:bg-gray-100 transition-colors"
-                            onClick={() => dispatch(toggleMobileMenu())}
-                            aria-label="Toggle menu"
-                        >
-                            {mobileOpen ? (
-                                <FiX className="w-5 h-5 text-gray-700" />
-                            ) : (
-                                <FiMenu className="w-5 h-5 text-gray-700" />
-                            )}
-                        </button>
-                    </div>
+                    {/* Mobile menu button */}
+                    <button
+                        className="lg:hidden p-2 rounded-xl hover:bg-gray-100 transition-colors"
+                        onClick={() => dispatch(toggleMobileMenu())}
+                        aria-label="Toggle menu"
+                    >
+                        {mobileOpen ? (
+                            <FiX className="w-5 h-5 text-gray-700" />
+                        ) : (
+                            <FiMenu className="w-5 h-5 text-gray-700" />
+                        )}
+                    </button>
                 </div>
+            </div>
 
-                {/* ── Mobile Menu ── */}
-                {mobileOpen && (
-                    <div className="lg:hidden border-t border-gray-100 py-4 animate-slide-up">
-                        {/* Mobile search */}
-                        <form onSubmit={handleSearch} className="mb-4">
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) =>
-                                        setSearchQuery(e.target.value)
-                                    }
-                                    placeholder="Tìm kiếm..."
-                                    className="input-field pl-10"
-                                />
-                                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                            </div>
-                        </form>
+            {/* ── Mobile Menu ── */}
+            {mobileOpen && (
+                <div className="lg:hidden border-t border-gray-100 py-4 animate-slide-up">
+                    {/* Mobile search */}
+                    <form onSubmit={handleSearch} className="mb-4">
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Tìm kiếm..."
+                                className="input-field pl-10"
+                            />
+                            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        </div>
+                    </form>
 
-                        {/* Mobile nav links */}
-                        <div className="space-y-1">
-                            {NAV_LINKS.map((link) => (
-                                <NavLink
-                                    key={link.to}
-                                    to={link.to}
-                                    end={link.to === '/'}
-                                    onClick={() => dispatch(closeMobileMenu())}
-                                    className={({ isActive }) =>
-                                        `block px-4 py-3 rounded-xl font-medium text-sm transition-colors duration-150
+                    {/* Mobile nav links */}
+                    <div className="space-y-1">
+                        {NAV_LINKS.map((link) => (
+                            <NavLink
+                                key={link.to}
+                                to={link.to}
+                                end={link.to === '/'}
+                                onClick={() => dispatch(closeMobileMenu())}
+                                className={({ isActive }) =>
+                                    `block px-4 py-3 rounded-xl font-medium text-sm transition-colors duration-150
                     ${
                         isActive
                             ? 'bg-primary-50 text-primary-700'
                             : 'text-gray-700 hover:bg-gray-50'
                     }`
-                                    }
-                                >
-                                    {link.label}
-                                </NavLink>
-                            ))}
+                                }
+                            >
+                                {link.label}
+                            </NavLink>
+                        ))}
 
-                            {!isAuth && (
-                                <Link
-                                    to="/auth/login"
-                                    onClick={() => dispatch(closeMobileMenu())}
-                                    className="block px-4 py-3 rounded-xl font-medium text-sm text-primary-700
+                        {!isAuth && (
+                            <Link
+                                to="/auth/login"
+                                onClick={() => dispatch(closeMobileMenu())}
+                                className="block px-4 py-3 rounded-xl font-medium text-sm text-primary-700
                              bg-primary-50 mt-2"
-                                >
-                                    Đăng nhập / Đăng ký
-                                </Link>
-                            )}
-                        </div>
+                            >
+                                Đăng nhập / Đăng ký
+                            </Link>
+                        )}
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </header>
     );
 }

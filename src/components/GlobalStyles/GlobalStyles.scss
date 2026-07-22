@@ -1,5 +1,6 @@
 @import 'normalize.css';
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Charmonman:wght@400;700&display=swap');
 
 :root {
     --cream: #f5f0ea;
@@ -20,6 +21,7 @@
     --shadow: 0 4px 24px rgba(44, 31, 26, 0.08);
     --shadow-lg: 0 12px 48px rgba(44, 31, 26, 0.14);
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --font-charmonman: 'Charmonman', cursive;
 }
 
 * {
