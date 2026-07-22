@@ -141,7 +141,7 @@ export default function Navbar() {
                         </Link>
 
                         {/* User Menu */}
-                        {isAuth ? (
+                        {/* {isAuth ? (
                             <div className="relative">
                                 <button
                                     onClick={() =>
@@ -163,13 +163,13 @@ export default function Navbar() {
                                             </span>
                                         </div>
                                     )}
-                                </button>
+                                </button> */}
 
                                 {/* Dropdown */}
-                                {userMenuOpen && (
+                                {/* {userMenuOpen && (
                                     <>
                                         {/* Backdrop */}
-                                        <div
+                                        {/* <div
                                             className="fixed inset-0 z-10"
                                             onClick={() =>
                                                 setUserMenuOpen(false)
@@ -232,16 +232,16 @@ export default function Navbar() {
                                             </div>
                                         </div>
                                     </>
-                                )}
+                                )} */}
                             </div>
-                        ) : (
+                        {/* ) : (
                             <Link
                                 to="/auth/login"
                                 className="btn-primary btn-sm hidden sm:flex"
                             >
                                 Đăng nhập
                             </Link>
-                        )}
+                        )} */} 
 
                         {/* Mobile menu button */}
                         <button
