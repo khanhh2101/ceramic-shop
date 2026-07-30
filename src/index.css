@@ -98,7 +98,14 @@
     h4,
     h5,
     h6 {
-        @apply font-display font-semibold leading-tight;
+        @apply font-display font-medium leading-tight;
+    }
+
+    p,
+    span,
+    select,
+    button {
+        @apply font-display font-normal;
     }
 
     /* Scrollbar tùy chỉnh */

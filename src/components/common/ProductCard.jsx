@@ -1,7 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToGuestCart, addToCartServer } from '@/store/slices/cartSlice';
-import { toggleWishlist, selectWishlistIds } from '@/store/slices/wishlistSlice';
+import {
+    toggleWishlist,
+    selectWishlistIds,
+} from '@/store/slices/wishlistSlice';
 import { selectIsAuthenticated } from '@/store/slices/authSlice';
 import { toggleCartDrawer } from '@/store/slices/uiSlice';
 import { FiShoppingBag } from 'react-icons/fi';
@@ -25,7 +28,10 @@ export default function ProductCard({ product }) {
         if (product.colors && product.colors.length > 0) {
             if (product.colors.length === 1) {
                 selectedColor = product.colors[0].name;
-                selectedColorId = product.colors[0].id !== undefined ? product.colors[0].id : null;
+                selectedColorId =
+                    product.colors[0].id !== undefined
+                        ? product.colors[0].id
+                        : null;
             } else {
                 navigate(`/product/${product.slug || product.id}`);
                 return;
@@ -33,9 +39,24 @@ export default function ProductCard({ product }) {
         }
 
         if (isAuth) {
-            dispatch(addToCartServer({ productId: product.id, quantity: 1, color: selectedColor, colorId: selectedColorId }));
+            dispatch(
+                addToCartServer({
+                    productId: product.id,
+                    quantity: 1,
+                    color: selectedColor,
+                    colorId: selectedColorId,
+                }),
+            );
         } else {
-            dispatch(addToGuestCart({ productId: product.id, quantity: 1, color: selectedColor, colorId: selectedColorId, product }));
+            dispatch(
+                addToGuestCart({
+                    productId: product.id,
+                    quantity: 1,
+                    color: selectedColor,
+                    colorId: selectedColorId,
+                    product,
+                }),
+            );
         }
         dispatch(toggleCartDrawer());
         toast.success('Đã thêm vào giỏ hàng!');
@@ -45,7 +66,9 @@ export default function ProductCard({ product }) {
         e.stopPropagation();
         dispatch(toggleWishlist(product.id));
         toast.success(
-            wishlistIds.includes(product.id) ? 'Đã xóa khỏi yêu thích' : 'Đã thêm vào yêu thích'
+            wishlistIds.includes(product.id)
+                ? 'Đã xóa khỏi yêu thích'
+                : 'Đã thêm vào yêu thích',
         );
     };
 
@@ -57,41 +80,54 @@ export default function ProductCard({ product }) {
             {/* Ảnh */}
             <div className="relative bg-[#fcf9f5] rounded-xl overflow-hidden mb-4 aspect-square shadow-sm group-hover:shadow-md transition-shadow duration-300">
                 <img
-                    src={product.primaryImageUrl || 'https://placehold.co/600x800/eeeeee/999999?text=Gom+Nau'}
+                    src={
+                        product.primaryImageUrl ||
+                        'https://placehold.co/600x800/eeeeee/999999?text=Gom+Nau'
+                    }
                     alt={product.name}
                     className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     loading="lazy"
                 />
-                
+
                 {/* Overlay (Làm mờ nhẹ khi hover) */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 z-0"></div>
 
                 {/* Badge giảm giá & Tags */}
                 <div className="absolute top-3 left-3 flex flex-col items-start gap-1.5 z-10">
                     {product.oldPrice > product.price && (
-                        <span className="bg-[#e53935] text-white text-[11px] font-bold py-1 px-2.5 rounded-sm uppercase tracking-[1px] shadow-sm border border-[#e53935]">
-                            -{Math.round((1 - product.price / product.oldPrice) * 100)}%
+                        <span className="bg-[#784242] text-white text-[11px] font-bold py-1 px-2.5 rounded-sm uppercase tracking-[1px] shadow-sm border border-[#784242]">
+                            -
+                            {Math.round(
+                                (1 - product.price / product.oldPrice) * 100,
+                            )}
+                            %
                         </span>
                     )}
                     {!product.inStock && (
                         <span className="px-2.5 py-1 text-[10px] font-bold tracking-[1px] text-[#555] bg-white/90 backdrop-blur-sm uppercase rounded-sm shadow-sm border border-[#e0e0e0]">
-                          Hết hàng
+                            Hết hàng
                         </span>
                     )}
                     {product.isFreeShip && (
                         <span className="px-2.5 py-1 text-[10px] font-bold tracking-[1px] text-white bg-[#4caf50] uppercase rounded-sm shadow-sm">
-                          Freeship
+                            Freeship
                         </span>
                     )}
-                    {product.tags && product.tags.map(tag => (
-                        <span key={tag.id || tag.name} 
-                              className="px-2.5 py-1 text-[10px] uppercase font-bold tracking-[1px] rounded-sm shadow-sm w-fit"
-                              style={{ backgroundColor: tag.hexColor || '#1a1a1a', color: '#fff' }}>
-                          {tag.name}
-                        </span>
-                    ))}
+                    {product.tags &&
+                        product.tags.map((tag) => (
+                            <span
+                                key={tag.id || tag.name}
+                                className="px-2.5 py-1 text-[10px] uppercase font-bold tracking-[1px] rounded-sm shadow-sm w-fit"
+                                style={{
+                                    backgroundColor: tag.hexColor || '#1a1a1a',
+                                    color: '#fff',
+                                }}
+                            >
+                                {tag.name}
+                            </span>
+                        ))}
                 </div>
-                
+
                 {/* Wishlist icon */}
                 <button
                     onClick={handleWishlist}
@@ -99,21 +135,38 @@ export default function ProductCard({ product }) {
                                cursor-pointer flex items-center justify-center transition-all duration-300 shadow-sm
                                ${wishlistIds.includes(product.id) ? 'bg-[#b5624a] scale-100 opacity-100' : 'bg-white/90 hover:bg-white scale-90 opacity-0 group-hover:scale-100 group-hover:opacity-100'}`}
                 >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill={wishlistIds.includes(product.id) ? '#fff' : 'none'} stroke={wishlistIds.includes(product.id) ? '#fff' : '#b5624a'} strokeWidth="2">
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill={
+                            wishlistIds.includes(product.id) ? '#fff' : 'none'
+                        }
+                        stroke={
+                            wishlistIds.includes(product.id)
+                                ? '#fff'
+                                : '#b5624a'
+                        }
+                        strokeWidth="2"
+                    >
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                     </svg>
                 </button>
-                
+
                 {/* Nút thêm giỏ (Quick Add - Hover) - Zara Style */}
                 <div className="absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out z-10">
-                     <button
+                    <button
                         className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#1a1a1a]/85 backdrop-blur-md text-white text-[11px] tracking-[2px] font-bold uppercase
                                    cursor-pointer transition-colors duration-300 hover:bg-[#b5624a] disabled:bg-gray-400 disabled:cursor-not-allowed"
                         onClick={handleAddToCart}
                         disabled={!product.inStock}
                     >
                         <FiShoppingBag size={14} />
-                        {!product.inStock ? 'Hết hàng' : (product.colors && product.colors.length > 1 ? 'Tùy chọn màu' : 'Thêm vào giỏ')}
+                        {!product.inStock
+                            ? 'Hết hàng'
+                            : product.colors && product.colors.length > 1
+                              ? 'Tùy chọn màu'
+                              : 'Thêm vào giỏ'}
                     </button>
                 </div>
             </div>
